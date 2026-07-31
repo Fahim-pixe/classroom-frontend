@@ -4,7 +4,7 @@ import { Breadcrumb } from '@/components/refine-ui/layout/breadcrumb';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { DEAPARTMENT_OPTIONS } from '@/constants';
+import { DEPARTMENT_OPTIONS } from '@/constants';
 import { CreateButton } from '@/components/refine-ui/buttons/create';
 import { DataTable } from '@/components/refine-ui/data-table/data-table';
 import { Subject } from '@/types';
