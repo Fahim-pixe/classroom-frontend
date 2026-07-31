@@ -20,7 +20,7 @@ const SubjectsList = () => {
     const departmentFilters = selectedDepartment === 'all' ? [] : [
         { field: 'department', operator: 'eq' as const, value: selectedDepartment }
     ];
-    const seartchFilter = searchQuery ? [
+    const searchFilters = searchQuery ? [
         { field: 'name', operator: 'contains' as const, value: searchQuery }
     ] : [];
     const subjectTable = useTable<Subject>({
