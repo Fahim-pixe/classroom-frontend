@@ -59,7 +59,7 @@ const SubjectsList = () => {
             pagination: { pageSize: 10, mode: 'server' },
             filters: {
                 permanent: [
-                    ...departmentFilters, ...seartchFilter
+                    ...departmentFilters, ...searchFilters
                 ],
             },
             sorters: {
@@ -105,7 +105,7 @@ const SubjectsList = () => {
                                 <SelectItem value="all">
                                     All Departments
                                 </SelectItem>
-                                {DEAPARTMENT_OPTIONS.map((option) => (
+                                {DEPARTMENT_OPTIONS.map((option) => (
                                     <SelectItem 
                                         key={option.value} 
                                         value={option.value}

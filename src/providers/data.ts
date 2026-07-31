@@ -81,7 +81,7 @@ export const dataProvider: DataProvider = {
 
     const filteredSubjects = applyFilters(mockSubjects, filters);
     const sortedSubjects = applySorters(filteredSubjects, sorters);
-    const current = pagination?.current ?? 1;
+    const current = pagination?.currentPage ?? 1;
     const pageSize = pagination?.pageSize ?? sortedSubjects.length;
     const start = Math.max(0, (current - 1) * pageSize);
 
