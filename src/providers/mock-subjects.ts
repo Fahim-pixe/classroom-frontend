@@ -102,7 +102,7 @@ const buildDescription = (name: string, department: string) =>
 const buildCreatedAt = (id: number) => {
   const day = ((id - 1) % 28) + 1;
 
-  return new Date(2025, 0, day).toISOString();
+  return new Date(Date.UTC(2025, 0, day)).toISOString();
 };
 
 export const mockSubjects: Subject[] = SUBJECT_CATALOG.map(([id, code, name, department]) => ({

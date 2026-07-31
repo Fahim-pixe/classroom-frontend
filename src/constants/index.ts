@@ -94,7 +94,9 @@ export const DEPARTMENTS = [
   'Visual Arts'
 ];
 
-export const DEAPARTMENT_OPTIONS = DEPARTMENTS.map((department) => ({
+export const DEPARTMENT_OPTIONS = DEPARTMENTS.map((department) => ({
   value: department,
   label: department,
 }));
+
+export const DEAPARTMENT_OPTIONS = DEPARTMENT_OPTIONS;
