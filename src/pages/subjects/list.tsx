@@ -11,7 +11,7 @@ import { Subject } from '@/types';
 import { ColumnDef } from "@tanstack/react-table";
 import { useTable } from "@refinedev/react-table";
 import { Search } from "lucide-react";
-import { useList } from "@refinedev/core";
+// import { useList } from "@refinedev/core";
 
 
 const SubjectsList = () => {
