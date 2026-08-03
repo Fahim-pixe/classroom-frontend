@@ -56,6 +56,11 @@ const options: CreateDataProviderOptions = {
         params.sort = sorters
           .map(({ field, order }) => `${order === "desc" ? "-" : ""}${field}`)
           .join(",");
+
+        sorters.forEach((sorter) => {
+          params.sortBy = sorter.field;
+          params.order = sorter.order;
+        });
       }
 
       return params;
