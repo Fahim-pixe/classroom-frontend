@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { DEPARTMENT_OPTIONS } from '@/constants';
 import { CreateButton } from '@/components/refine-ui/buttons/create';
 import { DataTable } from '@/components/refine-ui/data-table/data-table';
-import { Subject } from '@/types';
+import { SubjectResponse } from '@/types';
 import { ColumnDef } from "@tanstack/react-table";
 import { useTable } from "@refinedev/react-table";
 import { Search } from "lucide-react";
@@ -23,8 +23,8 @@ const SubjectsList = () => {
     const searchFilters = searchQuery ? [
         { field: 'name', operator: 'contains' as const, value: searchQuery }
     ] : [];
-    const subjectTable = useTable<Subject>({
-        columns: useMemo<ColumnDef<Subject>[]>(() => [
+    const subjectTable = useTable<SubjectResponse>({
+        columns: useMemo<ColumnDef<SubjectResponse>[]>(() => [
             {
                 id: 'code',
                 accessorKey: 'code',

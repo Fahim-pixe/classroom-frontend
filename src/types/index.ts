@@ -95,6 +95,10 @@ export type Department = {
   description: string;
 };
 
+export type SubjectResponse = Omit<Subject, "department"> & {
+  department: Department;
+};
+
 export type ClassDetails = {
   id: number;
   name: string;
