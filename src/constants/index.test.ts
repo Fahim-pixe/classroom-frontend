@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  DEAPARTMENT_OPTIONS,
   DEPARTMENT_OPTIONS,
   DEPARTMENTS,
 } from "./index";
@@ -55,12 +54,3 @@ describe("DEPARTMENT_OPTIONS", () => {
   });
 });
 
-describe("DEAPARTMENT_OPTIONS", () => {
-  it("is an alias that references the same array as DEPARTMENT_OPTIONS", () => {
-    expect(DEAPARTMENT_OPTIONS).toBe(DEPARTMENT_OPTIONS);
-  });
-
-  it("has identical contents to DEPARTMENT_OPTIONS", () => {
-    expect(DEAPARTMENT_OPTIONS).toEqual(DEPARTMENT_OPTIONS);
-  });
-});

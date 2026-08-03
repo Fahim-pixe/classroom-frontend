@@ -1,107 +1,99 @@
-import { BaseRecord, DataProvider, GetListParams, GetListResponse } from "@refinedev/core";
+import { createDataProvider, CreateDataProviderOptions } from "@refinedev/rest";
 
-import { Subject } from "@/types";
-import { mockSubjects } from "./mock-subjects";
+import { CreateResponse, GetOneResponse, ListResponse } from "@/types";
+import { BACKEND_BASE_URL } from "@/constants";
 
-const normalize = (value: unknown) => String(value ?? "").toLowerCase();
+if (!BACKEND_BASE_URL) {
+  throw new Error("BACKEND_BASE_URL is not defined in the environment variable .env file.");
+}
 
-const matchesFilter = (subject: Subject, filter: any): boolean => {
-  if (!filter) {
-    return true;
-  }
+const options: CreateDataProviderOptions = {
+  getList: {
+    getEndpoint: ({ resource }) => resource,
 
-  if (Array.isArray(filter)) {
-    return filter.every((item) => matchesFilter(subject, item));
-  }
+    buildQueryParams: async ({ resource, pagination, filters, sorters }) => {
+      const params: Record<string, string | number> = {};
 
-  if (typeof filter !== "object") {
-    return true;
-  }
+      if (pagination?.mode !== "off") {
+        const page = pagination?.currentPage ?? 1;
+        const pageSize = pagination?.pageSize ?? 10;
 
-  if (Array.isArray(filter.value) && (filter.operator === "or" || filter.operator === "and")) {
-    return filter.operator === "or"
-      ? filter.value.some((item: unknown) => matchesFilter(subject, item))
-      : filter.value.every((item: unknown) => matchesFilter(subject, item));
-  }
+        params.page = page;
+        params.limit = pageSize;
+      }
 
-  if (typeof filter.field !== "string") {
-    return true;
-  }
+      filters?.forEach((filter) => {
+        const field = "field" in filter ? filter.field : "";
+        const value = String(filter.value);
 
-  const subjectValue = subject[filter.field as keyof Subject];
+        if (field === "role") {
+          params.role = value;
+        }
 
-  switch (filter.operator) {
-    case "eq":
-      return subjectValue === filter.value;
-    case "contains":
-      return normalize(subjectValue).includes(normalize(filter.value));
-    default:
-      return true;
-  }
+        if (resource === "departments") {
+          if (field === "name" || field === "code") params.search = value;
+        }
+
+        if (resource === "users") {
+          if (field === "search" || field === "name" || field === "email") {
+            params.search = value;
+          }
+        }
+
+        if (resource === "subjects") {
+          if (field === "department") params.department = value;
+          if (field === "name" || field === "code") params.search = value;
+        }
+
+        if (resource === "classes") {
+          if (field === "name") params.search = value;
+          if (field === "subject") params.subject = value;
+          if (field === "teacher") params.teacher = value;
+        }
+      });
+
+      if (sorters && sorters.length > 0) {
+        sorters.forEach((sorter) => {
+          params.sortBy = sorter.field;
+          params.order = sorter.order;
+        });
+      }
+
+      return params;
+    },
+
+    mapResponse: async (response) => {
+      const payload: ListResponse = await response.clone().json();
+      return payload.data ?? [];
+    },
+
+    getTotalCount: async (response) => {
+      const payload: ListResponse = await response.clone().json();
+      return payload.pagination?.total ?? payload.data?.length ?? 0;
+    },
+  },
+
+  create: {
+    getEndpoint: ({ resource }) => resource,
+
+    buildBodyParams: async ({ variables }) => variables,
+
+    mapResponse: async (response) => {
+      const json: CreateResponse = await response.json();
+      return json.data ?? {};
+    },
+  },
+
+  getOne: {
+    getEndpoint: ({ resource, id }) => `${resource}/${id}`,
+
+    mapResponse: async (response) => {
+      const json: GetOneResponse = await response.json();
+      return json.data ?? {};
+    },
+  },
 };
 
-const applyFilters = (subjects: Subject[], filters?: GetListParams["filters"]) => {
-  if (!filters) {
-    return subjects;
-  }
+const { dataProvider } = createDataProvider(BACKEND_BASE_URL, options);
 
-  return subjects.filter((subject) => matchesFilter(subject, filters));
-};
-
-const applySorters = (subjects: Subject[], sorters?: GetListParams["sorters"]) => {
-  if (!sorters?.length) {
-    return [...subjects];
-  }
-
-  const [{ field, order }] = sorters;
-  const direction = order === "desc" ? -1 : 1;
-
-  return [...subjects].sort((leftSubject, rightSubject) => {
-    const leftValue = leftSubject[field as keyof Subject];
-    const rightValue = rightSubject[field as keyof Subject];
-
-    if (typeof leftValue === "number" && typeof rightValue === "number") {
-      return (leftValue - rightValue) * direction;
-    }
-
-    return normalize(leftValue).localeCompare(normalize(rightValue)) * direction;
-  });
-};
-
-export const dataProvider: DataProvider = {
-  getList: async <TData extends BaseRecord = BaseRecord>({
-    resource,
-    pagination,
-    filters,
-    sorters,
-  }: GetListParams): Promise<GetListResponse<TData>> => {
-    if (resource !== "subjects") {
-      return { data: [] as TData[], total: 0 };
-    }
-
-    const filteredSubjects = applyFilters(mockSubjects, filters);
-    const sortedSubjects = applySorters(filteredSubjects, sorters);
-    const current = pagination?.currentPage ?? 1;
-    const pageSize = pagination?.pageSize ?? sortedSubjects.length;
-    const start = Math.max(0, (current - 1) * pageSize);
-
-    return {
-      data: sortedSubjects.slice(start, start + pageSize) as unknown as TData[],
-      total: filteredSubjects.length,
-    };
-  },
-  // Refine requires these minimal stubs on DataProvider, or TypeScript will throw a type error:
-  getOne: async () => {
-    throw new Error("Not implemented");
-  },
-  create: async () => {
-    throw new Error("Not implemented");
-  },
-  update: async () => {
-    throw new Error("Not implemented");
-  },
-  deleteOne: async () => {
-    throw new Error("Not implemented");
-  },
-  getApiUrl: () => "",
-};
+export { dataProvider };
