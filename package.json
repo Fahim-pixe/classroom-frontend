@@ -39,7 +39,6 @@
     "@refinedev/react-router": "^2.0.0",
     "@refinedev/react-table": "^6.0.0",
     "@refinedev/rest": "^2.1.1",
-    "@refinedev/simple-rest": "^6.0.0",
     "@tailwindcss/vite": "^4.1.8",
     "@tanstack/react-table": "^8.2.6",
     "class-variance-authority": "^0.7.1",
