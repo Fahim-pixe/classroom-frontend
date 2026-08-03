@@ -11,7 +11,7 @@ const options: CreateDataProviderOptions = {
   getList: {
     getEndpoint: ({ resource }) => resource,
 
-    buildQueryParams: async ({ resource, pagination, filters }) => {
+    buildQueryParams: async ({ resource, pagination, filters, sorters }) => {
       const params: Record<string, string | number> = {};
 
       if (pagination?.mode !== "off") {
@@ -51,6 +51,13 @@ const options: CreateDataProviderOptions = {
           if (field === "teacher") params.teacher = value;
         }
       });
+
+      if (sorters && sorters.length > 0) {
+        sorters.forEach((sorter) => {
+          params.sortBy = sorter.field;
+          params.order = sorter.order;
+        });
+      }
 
       return params;
     },
