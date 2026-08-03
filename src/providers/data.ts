@@ -3,15 +3,11 @@ import { createDataProvider, CreateDataProviderOptions } from "@refinedev/rest";
 import { CreateResponse, GetOneResponse, ListResponse } from "@/types";
 import { BACKEND_BASE_URL } from "@/constants";
 
-if (!BACKEND_BASE_URL) {
-  throw new Error("BACKEND_BASE_URL is not defined in the environment variable .env file.");
-}
-
 const options: CreateDataProviderOptions = {
   getList: {
     getEndpoint: ({ resource }) => resource,
 
-    buildQueryParams: async ({ resource, pagination, filters, sorters }) => {
+    buildQueryParams: async ({ resource, pagination, filters }) => {
       const params: Record<string, string | number> = {};
 
       if (pagination?.mode !== "off") {
@@ -52,23 +48,16 @@ const options: CreateDataProviderOptions = {
         }
       });
 
-      if (sorters && sorters.length > 0) {
-        sorters.forEach((sorter) => {
-          params.sortBy = sorter.field;
-          params.order = sorter.order;
-        });
-      }
-
       return params;
     },
 
     mapResponse: async (response) => {
-      const payload: ListResponse = await response.clone().json();
+      const payload: ListResponse = await response.json();
       return payload.data ?? [];
     },
 
     getTotalCount: async (response) => {
-      const payload: ListResponse = await response.clone().json();
+      const payload: ListResponse = await response.json();
       return payload.pagination?.total ?? payload.data?.length ?? 0;
     },
   },

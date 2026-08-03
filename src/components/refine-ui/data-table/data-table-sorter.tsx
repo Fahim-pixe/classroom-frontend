@@ -1,9 +1,9 @@
 "use client";
 
-import type { Column } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { Column } from "@tanstack/react-table";
+import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 
 export type DataTableSorterProps<TData> = {
   column: Column<TData>;
@@ -32,12 +32,12 @@ export function DataTableSorter<TData>({
       className={cn("data-[state=open]:bg-accent", "w-5 h-5", className)}
     >
       {column.getIsSorted() === "desc" ? (
-        <ArrowDown className={cn("text-primary", "!w-3", "!h-3")} />
+        <ArrowDown className={cn("text-primary", "w-3!", "h-3!")} />
       ) : column.getIsSorted() === "asc" ? (
-        <ArrowUp className={cn("text-primary", "!w-3", "!h-3")} />
+        <ArrowUp className={cn("text-primary", "w-3!", "h-3!")} />
       ) : (
         <ChevronsUpDown
-          className={cn("text-muted-foreground", "!w-3", "!h-3")}
+          className={cn("text-muted-foreground", "w-3!", "h-3!")}
         />
       )}
     </Button>

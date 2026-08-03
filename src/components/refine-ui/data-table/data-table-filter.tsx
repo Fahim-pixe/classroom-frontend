@@ -1,19 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
 import { useTranslate, type CrudOperators } from "@refinedev/core";
 import type { Column, Table as ReactTable } from "@tanstack/react-table";
-import type { DateRange } from "react-day-picker";
 import { Check, ChevronsUpDown, ListFilter, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import type { DateRange } from "react-day-picker";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Command,
   CommandEmpty,
@@ -22,8 +17,13 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
 export type DataTableFilterDropdownProps<TData> = {
@@ -63,7 +63,7 @@ export function DataTableFilterDropdown<TData>({
             triggerClassName
           )}
         >
-          <ListFilter className={cn("!h-3", "!w-3")} />
+          <ListFilter className={cn("h-3!", "w-3!")} />
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -374,7 +374,7 @@ export function DataTableFilterCombobox<TData>({
                                 handleRemove(val);
                               }}
                             >
-                              <X className={cn("!h-2", "!w-2")} />
+                              <X className={cn("h-2!", "w-2!")} />
                             </span>
                           </Badge>
                         ))}
@@ -410,7 +410,7 @@ export function DataTableFilterCombobox<TData>({
                 </div>
               </Button>
             </PopoverTrigger>
-            <PopoverContent className={cn("w-[200px]", "p-0")} align="start">
+            <PopoverContent className={cn("w-50", "p-0")} align="start">
               <Command>
                 <CommandInput
                   placeholder={t("table.filter.combobox.search", "Search...")}
@@ -773,9 +773,11 @@ export function DataTableFilterInput<TData>({
   );
 }
 
-const CRUD_OPERATOR_LABELS: Record<
-  Exclude<CrudOperators, "or" | "and">,
-  { i18nKey: string; defaultLabel: string }
+export const CRUD_OPERATOR_LABELS: Partial<
+  Record<
+    Exclude<CrudOperators, "or" | "and">,
+    { i18nKey: string; defaultLabel: string }
+  >
 > = {
   eq: { i18nKey: "table.filter.operator.eq", defaultLabel: "Equals" },
   ne: { i18nKey: "table.filter.operator.ne", defaultLabel: "Not equals" },
@@ -866,14 +868,6 @@ const CRUD_OPERATOR_LABELS: Record<
     i18nKey: "table.filter.operator.nendswiths",
     defaultLabel: "Not ends with (case sensitive)",
   },
-  eqs: {
-    i18nKey: "table.filter.operator.eqs",
-    defaultLabel: "Equals (case sensitive)",
-  },
-  nes: {
-    i18nKey: "table.filter.operator.nes",
-    defaultLabel: "Not equals (case sensitive)",
-  },
 };
 
 export type DataTableFilterOperatorSelectProps = {
@@ -903,11 +897,13 @@ export function DataTableFilterOperatorSelect({
     );
   }, [operatorsFromProps]);
 
-  const selectedLabel = t(
-    CRUD_OPERATOR_LABELS[value as Exclude<CrudOperators, "or" | "and">].i18nKey,
-    CRUD_OPERATOR_LABELS[value as Exclude<CrudOperators, "or" | "and">]
-      .defaultLabel
-  );
+type ValidOperator = Exclude<CrudOperators, "or" | "and">;
+const operatorConfig = CRUD_OPERATOR_LABELS[value as ValidOperator];
+const selectedLabel = t(
+  operatorConfig?.i18nKey ?? "",
+  operatorConfig?.defaultLabel ?? String(value)
+);
+
   const placeholderText =
     placeholder ?? t("table.filter.operator.placeholder", "Search operator...");
   const noResultsText = t(
