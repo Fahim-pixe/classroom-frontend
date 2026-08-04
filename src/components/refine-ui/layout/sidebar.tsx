@@ -211,7 +211,8 @@ function SidebarItemLink({ item, selectedKey }: MenuItemProps) {
 
 function SidebarHeader() {
   const { title } = useRefineOptions();
-  const { open, isMobile } = useShadcnSidebar();
+  // 👇 MAKE SURE ALL THREE OF THESE ARE DESTRUCTURED HERE 👇
+  const { open, isMobile, setOpen } = useShadcnSidebar();
 
   return (
     <ShadcnSidebarHeader
@@ -227,6 +228,11 @@ function SidebarHeader() {
       )}
     >
       <div
+        onClick={() => {
+          if (!isMobile) {
+            setOpen(!open);
+          }
+        }}
         className={cn(
           "whitespace-nowrap",
           "flex",
@@ -240,6 +246,7 @@ function SidebarHeader() {
           {
             "pl-3": !open,
             "pl-5": open,
+            "cursor-pointer": !isMobile, 
           }
         )}
       >
