@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { useCreate, useGetIdentity } from "@refinedev/core";
+import { useCreate, useGetIdentity, useNotification } from "@refinedev/core";
 import { useNavigate } from "react-router";
 
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
@@ -33,6 +33,7 @@ const EnrollmentsJoin = () => {
     mutation: { isPending },
   } = useCreate();
   const { data: currentUser } = useGetIdentity<User>();
+  const { open: notify } = useNotification();
 
   const form = useForm<JoinFormValues>({
     resolver: zodResolver(joinSchema),
@@ -44,21 +45,51 @@ const EnrollmentsJoin = () => {
   const inviteCode = form.watch("inviteCode");
 
   const onSubmit = async (values: JoinFormValues) => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id) {
+      notify?.({
+        type: "error",
+        message: "You must be signed in to join a class",
+        description: "Please sign in again and retry.",
+      });
+      return;
+    }
 
-    const response = await joinEnrollment({
-      resource: "enrollments/join",
-      values: {
-        inviteCode: values.inviteCode,
-        studentId: currentUser.id,
-      },
-    });
+    const normalizedInviteCode = values.inviteCode.trim();
+    if (normalizedInviteCode.length < 3) {
+      form.setError("inviteCode", {
+        type: "validate",
+        message: "Enter a valid invite code.",
+      });
+      return;
+    }
 
-    navigate("/enrollments/confirm", {
-      state: {
-        enrollment: response?.data,
-      },
-    });
+    try {
+      const response = await joinEnrollment({
+        resource: "enrollments/join",
+        values: {
+          inviteCode: normalizedInviteCode,
+          studentId: currentUser.id,
+        },
+      });
+
+      notify?.({
+        type: "success",
+        message: "Class joined successfully",
+        description: "The class has been added to your enrollments.",
+      });
+
+      navigate("/enrollments/confirm", {
+        state: {
+          enrollment: response?.data,
+        },
+      });
+    } catch (error) {
+      notify?.({
+        type: "error",
+        message: "Unable to join class",
+        description: error instanceof Error ? error.message : "Check the invite code and try again.",
+      });
+    }
   };
 
   const isSubmitDisabled = isPending || !currentUser?.id || !inviteCode;

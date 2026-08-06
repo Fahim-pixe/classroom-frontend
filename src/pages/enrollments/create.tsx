@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { useCreate, useGetIdentity, useList } from "@refinedev/core";
+import { useCreate, useGetIdentity, useList, useNotification } from "@refinedev/core";
 import { useNavigate } from "react-router";
 import { BookOpen, Building2, GraduationCap, UsersRound } from "lucide-react";
 
@@ -42,6 +42,7 @@ const EnrollmentsCreate = () => {
     mutation: { isPending },
   } = useCreate();
   const { data: currentUser } = useGetIdentity<User>();
+  const { open: notify } = useNotification();
 
   const { query: classesQuery } = useList<ClassDetails>({
     resource: "classes",
@@ -64,21 +65,61 @@ const EnrollmentsCreate = () => {
   const selectedClass = classes.find((classItem) => classItem.id === selectedClassId);
 
   const onSubmit = async (values: EnrollFormValues) => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id) {
+      notify?.({
+        type: "error",
+        message: "You must be signed in to enroll",
+        description: "Please sign in again and retry the enrollment.",
+      });
+      return;
+    }
 
-    const response = await createEnrollment({
-      resource: "enrollments",
-      values: {
-        classId: values.classId,
-        studentId: currentUser.id,
-      },
-    });
+    const classToEnroll = classes.find((classItem) => classItem.id === values.classId);
+    if (!classToEnroll) {
+      notify?.({
+        type: "error",
+        message: "Select a valid class",
+        description: "The selected class is no longer available.",
+      });
+      return;
+    }
 
-    navigate("/enrollments/confirm", {
-      state: {
-        enrollment: response?.data,
-      },
-    });
+    if (classToEnroll.status !== "active") {
+      notify?.({
+        type: "error",
+        message: "Class is not available",
+        description: "Choose an active class before enrolling.",
+      });
+      return;
+    }
+
+    try {
+      const response = await createEnrollment({
+        resource: "enrollments",
+        values: {
+          classId: values.classId,
+          studentId: currentUser.id,
+        },
+      });
+
+      notify?.({
+        type: "success",
+        message: "Enrollment successful",
+        description: `You are now enrolled in ${classToEnroll.name}.`,
+      });
+
+      navigate("/enrollments/confirm", {
+        state: {
+          enrollment: response?.data,
+        },
+      });
+    } catch (error) {
+      notify?.({
+        type: "error",
+        message: "Enrollment failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    }
   };
 
   const isSubmitDisabled =

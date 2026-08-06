@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useLink, useList } from "@refinedev/core";
+import { useGetIdentity, useLink, useList } from "@refinedev/core";
 import {
   Bar,
   BarChart,
@@ -24,6 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { Department, Subject, User } from "@/types";
+import { UserRole } from "@/types";
+import TeacherDashboard from "@/pages/teacher-dashboard";
 
 type ClassListItem = {
   id: number;
@@ -39,7 +41,7 @@ type ClassListItem = {
 
 const roleColors = ["#f97316", "#0ea5e9", "#22c55e", "#a855f7"];
 
-const Dashboard = () => {
+const AdminDashboard = () => {
   const Link = useLink();
   const { query: usersQuery } = useList<User>({
     resource: "users",
@@ -470,6 +472,20 @@ const Dashboard = () => {
       <Separator />
     </div>
   );
+};
+
+const Dashboard = () => {
+  const { data: currentUser, isLoading } = useGetIdentity<User>();
+
+  if (isLoading) {
+    return <p className="text-sm text-muted-foreground">Loading dashboard…</p>;
+  }
+
+  if (currentUser?.role === UserRole.TEACHER) {
+    return <TeacherDashboard teacher={currentUser} />;
+  }
+
+  return <AdminDashboard />;
 };
 
 export default Dashboard;
