@@ -2,6 +2,7 @@ import {
   useRefineOptions,
   useActiveAuthProvider,
   useLogout,
+  useGo,
 } from "@refinedev/core";
 import {
   DropdownMenu,
@@ -12,7 +13,7 @@ import { DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/refine-ui/theme/theme-toggle";
 import { UserAvatar } from "@/components/refine-ui/layout/user-avatar";
 import { useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
-import { LogOutIcon } from "lucide-react";
+import { LogOutIcon, UserCircleIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Header = () => {
@@ -119,6 +120,7 @@ function MobileHeader() {
 
 const UserDropdown = () => {
   const { mutate: logout, isPending: isLoggingOut } = useLogout();
+  const go = useGo();
 
   const authProvider = useActiveAuthProvider();
 
@@ -132,6 +134,14 @@ const UserDropdown = () => {
         <UserAvatar />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={() => {
+            go({ to: "/profile" });
+          }}
+        >
+          <UserCircleIcon />
+          <span>Profile</span>
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
             logout();

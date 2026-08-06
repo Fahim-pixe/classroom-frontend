@@ -3,9 +3,11 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useCreate, useGetIdentity, useList } from "@refinedev/core";
 import { useNavigate } from "react-router";
+import { BookOpen, Building2, GraduationCap, UsersRound } from "lucide-react";
 
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { CreateView } from "@/components/refine-ui/views/create-view";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -59,6 +61,7 @@ const EnrollmentsCreate = () => {
   });
 
   const selectedClassId = form.watch("classId");
+  const selectedClass = classes.find((classItem) => classItem.id === selectedClassId);
 
   const onSubmit = async (values: EnrollFormValues) => {
     if (!currentUser?.id) return;
@@ -136,7 +139,12 @@ const EnrollmentsCreate = () => {
                               key={classItem.id}
                               value={String(classItem.id)}
                             >
-                              {classItem.name}
+                              <div className="flex flex-col gap-0.5">
+                                <span className="font-medium">{classItem.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {classItem.subject?.name ?? "Subject not assigned"} · {classItem.teacher?.name ?? "Instructor not assigned"}
+                                </span>
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -146,14 +154,71 @@ const EnrollmentsCreate = () => {
                   )}
                 />
 
+                {selectedClass && (
+                  <div className="rounded-lg border border-border bg-muted/20 p-4">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">Class details</p>
+                        <p className="text-xs text-muted-foreground">
+                          Review the class assignment before enrolling.
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="capitalize">
+                        {selectedClass.status ?? "active"}
+                      </Badge>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <EnrollmentDetail
+                        icon={BookOpen}
+                        label="Subject"
+                        value={selectedClass.subject?.name ?? "Not assigned"}
+                      />
+                      <EnrollmentDetail
+                        icon={GraduationCap}
+                        label="Faculty / teacher"
+                        value={selectedClass.teacher?.name ?? "Not assigned"}
+                      />
+                      <EnrollmentDetail
+                        icon={Building2}
+                        label="Department"
+                        value={selectedClass.department?.name ?? "Not assigned"}
+                      />
+                      <EnrollmentDetail
+                        icon={UsersRound}
+                        label="Capacity"
+                        value={selectedClass.capacity ? `${selectedClass.capacity} students` : "Not specified"}
+                      />
+                    </div>
+                    {selectedClass.schedules?.length > 0 && (
+                      <div className="mt-3 border-t border-border pt-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Schedule
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {selectedClass.schedules.map((schedule, index) => (
+                            <Badge key={`${schedule.day}-${index}`} variant="outline">
+                              {schedule.day}: {schedule.startTime}–{schedule.endTime}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <FormItem>
                   <FormLabel>Student</FormLabel>
                   <FormControl>
                     <Input
-                      value={currentUser?.email ?? "Not signed in"}
+                      value={currentUser?.name ?? "Not signed in"}
                       readOnly
                     />
                   </FormControl>
+                  {currentUser?.email && (
+                    <p className="text-xs text-muted-foreground">
+                      Signed in as {currentUser.email}
+                    </p>
+                  )}
                 </FormItem>
 
                 <Button type="submit" size="lg" disabled={isSubmitDisabled}>
@@ -167,5 +232,21 @@ const EnrollmentsCreate = () => {
     </CreateView>
   );
 };
+
+type EnrollmentDetailProps = {
+  icon: typeof BookOpen;
+  label: string;
+  value: string;
+};
+
+const EnrollmentDetail = ({ icon: Icon, label, value }: EnrollmentDetailProps) => (
+  <div className="flex items-start gap-2">
+    <Icon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+    <div className="min-w-0">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="truncate text-sm font-medium">{value}</p>
+    </div>
+  </div>
+);
 
 export default EnrollmentsCreate;

@@ -110,10 +110,15 @@ const EnrollmentsJoin = () => {
                   <FormLabel>Student</FormLabel>
                   <FormControl>
                     <Input
-                      value={currentUser?.email ?? "Not signed in"}
+                      value={currentUser?.name ?? "Not signed in"}
                       readOnly
                     />
                   </FormControl>
+                  {currentUser?.email && (
+                    <p className="text-xs text-muted-foreground">
+                      Signed in as {currentUser.email}
+                    </p>
+                  )}
                 </FormItem>
 
                 <Button type="submit" size="lg" disabled={isSubmitDisabled}>

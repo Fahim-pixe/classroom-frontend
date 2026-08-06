@@ -34,6 +34,7 @@ import { Register } from "./pages/register";
 
 // Dashboard
 import Dashboard from "@/pages/dashboard";
+import Profile from "@/pages/profile";
 
 // Subjects
 import SubjectsList from "./pages/subjects/list";
@@ -136,6 +137,7 @@ function App() {
                   }
                 >
                   <Route path="/" element={<Dashboard />} />
+                  <Route path="profile" element={<Profile />} />
                   
                   <Route path="subjects">
                     <Route index element={<SubjectsList />} />

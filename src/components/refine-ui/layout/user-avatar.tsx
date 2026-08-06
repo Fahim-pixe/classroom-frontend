@@ -2,15 +2,7 @@ import { useGetIdentity } from "@refinedev/core";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-
-type User = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  email: string;
-  avatar?: string;
-};
+import type { User } from "@/types";
 
 export function UserAvatar() {
   const { data: user, isLoading: userIsLoading } = useGetIdentity<User>();
@@ -19,24 +11,24 @@ export function UserAvatar() {
     return <Skeleton className={cn("h-10", "w-10", "rounded-full")} />;
   }
 
-  const { fullName, avatar } = user;
-
   return (
     <Avatar className={cn("h-10", "w-10")}>
-      {avatar && <AvatarImage src={avatar} alt={fullName} />}
-      <AvatarFallback>{getInitials(fullName)}</AvatarFallback>
+      {user.image && <AvatarImage src={user.image} alt={user.name} />}
+      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
     </Avatar>
   );
 }
 
 const getInitials = (name = "") => {
-  const names = name.split(" ");
-  let initials = names[0].substring(0, 1).toUpperCase();
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 
-  if (names.length > 1) {
-    initials += names[names.length - 1].substring(0, 1).toUpperCase();
-  }
-  return initials;
+  return initials || "U";
 };
 
 UserAvatar.displayName = "UserAvatar";
