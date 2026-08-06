@@ -23,7 +23,7 @@ import { InputPassword } from "@/components/refine-ui/form/input-password";
 import { cn } from "@/lib/utils";
 
 export const SignUpForm = () => {
-  const [name, setName] = useState(""); // <-- Added Name state
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -43,18 +43,17 @@ export const SignUpForm = () => {
       return;
     }
 
-    // Pass name, email, password, and default role to the register mutation
     register({
       name,
       email,
       password,
-      role: "admin", // Automatically register as admin so you aren't blocked!
+      role: "admin",
     });
   };
 
   return (
     <div className={cn("flex", "flex-col", "items-center", "justify-center", "px-6", "py-8", "min-h-svh")}>
-      <Card className={cn("sm:w-[456px]", "p-12", "mt-6")}>
+      <Card className={cn("sm:w-114", "p-12", "mt-6")}>
         <CardHeader className={cn("px-0")}>
           <CardTitle className={cn("text-green-600", "dark:text-green-400", "text-3xl", "font-semibold")}>
             Sign up (Admin Portal)
@@ -66,7 +65,6 @@ export const SignUpForm = () => {
         <Separator />
         <CardContent className={cn("px-0")}>
           <form onSubmit={handleSignUp}>
-            {/* Added Name Input Field */}
             <div className={cn("flex", "flex-col", "gap-2", "mt-4")}>
               <Label htmlFor="name">Full Name</Label>
               <Input
