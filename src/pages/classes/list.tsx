@@ -1,8 +1,8 @@
+import { useGetIdentity, useList } from "@refinedev/core";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { useTable } from "@refinedev/react-table";
-import { useList } from "@refinedev/core";
 
 import {
   Select,
@@ -18,6 +18,8 @@ import { CreateButton } from "@/components/refine-ui/buttons/create";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { ShowButton } from "@/components/refine-ui/buttons/show";
+import { EditButton } from "@/components/refine-ui/buttons/edit";
+import { DeleteButton } from "@/components/refine-ui/buttons/delete";
 
 import { Subject, User } from "@/types";
 
@@ -36,6 +38,8 @@ type ClassListItem = {
 };
 
 const ClassesList = () => {
+  const { data: user } = useGetIdentity<User>();
+  const canModify = user?.role === "admin" || user?.role === "teacher";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
   const [selectedTeacher, setSelectedTeacher] = useState<string>("all");
@@ -141,8 +145,41 @@ const ClassesList = () => {
           </ShowButton>
         ),
       },
+      {
+        id: "actions",
+        size: 200,
+        header: () => <p className="column-title text-right">Actions</p>,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end gap-2">
+            <ShowButton
+              resource="classes"
+              recordItemId={row.original.id}
+              variant="outline"
+              size="sm"
+            >
+              View
+            </ShowButton>
+
+            {canModify && (
+              <>
+                <EditButton
+                  resource="classes"
+                  recordItemId={row.original.id}
+                  variant="outline"
+                  size="sm"
+                />
+                <DeleteButton
+                  resource="classes"
+                  recordItemId={row.original.id}
+                  size="sm"
+                />
+              </>
+            )}
+          </div>
+        ),
+      },
     ],
-    []
+    [canModify]
   );
 
   const { query: subjectsQuery } = useList<Subject>({
@@ -210,7 +247,6 @@ const ClassesList = () => {
         mode: "server",
       },
       filters: {
-        // Compose refine filters from the current UI selections.
         permanent: [...subjectFilters, ...teacherFilters, ...searchFilters],
       },
       sorters: {
@@ -275,7 +311,7 @@ const ClassesList = () => {
               </SelectContent>
             </Select>
 
-            <CreateButton resource="classes" />
+            {canModify && <CreateButton resource="classes" />}
           </div>
         </div>
       </div>

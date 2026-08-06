@@ -1,3 +1,4 @@
+import { useGetIdentity } from "@refinedev/core";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTable } from "@refinedev/react-table";
@@ -17,11 +18,15 @@ import { CreateButton } from "@/components/refine-ui/buttons/create";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { ShowButton } from "@/components/refine-ui/buttons/show";
+import { EditButton } from "@/components/refine-ui/buttons/edit";
+import { DeleteButton } from "@/components/refine-ui/buttons/delete";
 
-import { Subject } from "@/types";
+import { Subject, User } from "@/types";
 import { DEPARTMENT_OPTIONS } from "@/constants";
 
 const SubjectListPage = () => {
+  const { data: user } = useGetIdentity<User>();
+  const canModify = user?.role === "admin" || user?.role === "teacher";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
 
@@ -77,8 +82,40 @@ const SubjectListPage = () => {
           </ShowButton>
         ),
       },
+      {
+        id: "actions",
+        size: 200,
+        header: () => <p className="column-title text-right">Actions</p>,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end gap-2">
+            <ShowButton
+              resource="subjects"
+              recordItemId={row.original.id}
+              variant="outline"
+              size="sm"
+            >
+              View
+            </ShowButton>
+            {canModify && (
+              <>
+                <EditButton
+                  resource="subjects"
+                  recordItemId={row.original.id}
+                  variant="outline"
+                  size="sm"
+                />
+                <DeleteButton
+                  resource="subjects"
+                  recordItemId={row.original.id}
+                  size="sm"
+                />
+              </>
+            )}
+          </div>
+        ),
+      },
     ],
-    []
+    [canModify]
   );
 
   const departmentFilters =
@@ -111,7 +148,6 @@ const SubjectListPage = () => {
         mode: "server",
       },
       filters: {
-        // Compose refine filters from the current UI selections.
         permanent: [...departmentFilters, ...searchFilters],
       },
       sorters: {
@@ -164,7 +200,7 @@ const SubjectListPage = () => {
               </SelectContent>
             </Select>
 
-            <CreateButton resource="subjects" />
+            {canModify && <CreateButton resource="subjects" />}
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 "use client";
-
+import { useGetIdentity } from "@refinedev/core";
+import type { User } from "@/types";
 import type { PropsWithChildren } from "react";
 
 import { ArrowLeftIcon } from "lucide-react";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshButton } from "@/components/refine-ui/buttons/refresh";
 import { cn } from "@/lib/utils";
 import { EditButton } from "../buttons/edit";
+import { DeleteButton } from "../buttons/delete";
 
 type ShowViewProps = PropsWithChildren<{
   className?: string;
@@ -41,6 +43,9 @@ export const ShowViewHeader = ({
   const back = useBack();
 
   const getUserFriendlyName = useUserFriendlyName();
+  
+  const { data: user } = useGetIdentity<User>();
+  const canModify = user?.role === "admin" || user?.role === "teacher";
 
   const { resource, identifier } = useResourceParams({
     resource: resourceFromProps,
@@ -59,10 +64,10 @@ export const ShowViewHeader = ({
   return (
     <div className={cn("flex flex-col", "gap-4", wrapperClassName)}>
       <div className="flex items-center relative gap-2">
-        <div className="bg-background z-[2] pr-4">
+        <div className="bg-background z-2 pr-4">
           <Breadcrumb />
         </div>
-        <Separator className={cn("absolute", "left-0", "right-0", "z-[1]")} />
+        <Separator className={cn("absolute", "left-0", "right-0", "z-1")} />
       </div>
       <div
         className={cn(
@@ -87,8 +92,14 @@ export const ShowViewHeader = ({
             recordItemId={recordItemId}
             resource={resourceName}
           />
-          <EditButton
-            variant="outline"
+          {canModify && (
+            <EditButton
+              variant="outline"
+              recordItemId={recordItemId}
+              resource={resourceName}
+            />
+          )}
+          <DeleteButton
             recordItemId={recordItemId}
             resource={resourceName}
           />

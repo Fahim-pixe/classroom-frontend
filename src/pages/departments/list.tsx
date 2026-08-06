@@ -1,3 +1,4 @@
+import { useGetIdentity } from "@refinedev/core";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -10,6 +11,10 @@ import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { ShowButton } from "@/components/refine-ui/buttons/show";
 import { CreateButton } from "@/components/refine-ui/buttons/create";
+import { EditButton } from "@/components/refine-ui/buttons/edit";
+import { DeleteButton } from "@/components/refine-ui/buttons/delete";
+
+import { User } from "@/types";
 
 type DepartmentListItem = {
   id: number;
@@ -20,6 +25,8 @@ type DepartmentListItem = {
 };
 
 const DepartmentsList = () => {
+  const { data: user } = useGetIdentity<User>();
+  const canModify = user?.role === "admin" || user?.role === "teacher";
   const [searchQuery, setSearchQuery] = useState("");
 
   const departmentColumns = useMemo<ColumnDef<DepartmentListItem>[]>(
@@ -89,8 +96,40 @@ const DepartmentsList = () => {
           </ShowButton>
         ),
       },
+      {
+        id: "actions",
+        size: 200,
+        header: () => <p className="column-title text-right">Actions</p>,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end gap-2">
+            <ShowButton
+              resource="departments"
+              recordItemId={row.original.id}
+              variant="outline"
+              size="sm"
+            >
+              View
+            </ShowButton>
+            {canModify && (
+              <>
+                <EditButton
+                  resource="departments"
+                  recordItemId={row.original.id}
+                  variant="outline"
+                  size="sm"
+                />
+                <DeleteButton
+                  resource="departments"
+                  recordItemId={row.original.id}
+                  size="sm"
+                />
+              </>
+            )}
+          </div>
+        ),
+      },
     ],
-    []
+    [canModify]
   );
 
   const searchFilters = searchQuery
@@ -149,7 +188,7 @@ const DepartmentsList = () => {
               onChange={(event) => setSearchQuery(event.target.value)}
             />
           </div>
-          <CreateButton resource="departments" />
+          {canModify && <CreateButton resource="departments" />}
         </div>
       </div>
 
