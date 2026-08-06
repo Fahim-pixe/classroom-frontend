@@ -1,8 +1,21 @@
 import { createAuthClient } from "better-auth/react";
 import { BACKEND_BASE_URL, USER_ROLES } from "../constants";
 
+const normalizedBackendUrl = BACKEND_BASE_URL?.replace(/\/+$/, "");
+
+if (!normalizedBackendUrl) {
+  throw new Error("VITE_BACKEND_BASE_URL is not configured");
+}
+
+const authBaseURL = normalizedBackendUrl.endsWith("/api")
+  ? `${normalizedBackendUrl}/auth`
+  : `${normalizedBackendUrl}/api/auth`;
+
 export const authClient = createAuthClient({
-  baseURL: `${BACKEND_BASE_URL}auth`,
+  baseURL: authBaseURL,
+  fetchOptions: {
+    credentials: "include",
+  },
   user: {
     additionalFields: {
       role: {

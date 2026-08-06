@@ -2,6 +2,16 @@ import type { AuthProvider } from "@refinedev/core";
 import { User, SignUpPayload } from "@/types";
 import { authClient } from "@/lib/auth-client";
 
+const getSessionUser = async (): Promise<User | null> => {
+  const { data, error } = await authClient.getSession();
+
+  if (error || !data?.user) {
+    return null;
+  }
+
+  return data.user as unknown as User;
+};
+
 export const authProvider: AuthProvider = {
   register: async ({
     email,
@@ -117,47 +127,43 @@ export const authProvider: AuthProvider = {
     return { error };
   },
   check: async () => {
-    const user = localStorage.getItem("user");
+    const user = await getSessionUser();
 
     if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
       return {
         authenticated: true,
       };
     }
 
+    localStorage.removeItem("user");
     return {
       authenticated: false,
       logout: true,
       redirectTo: "/login",
       error: {
         name: "Unauthorized",
-        message: "Check failed",
+        message: "Session is missing or expired",
       },
     };
   },
   getPermissions: async () => {
-    const user = localStorage.getItem("user");
+    const user = await getSessionUser();
 
-    if (!user) return null;
-    const parsedUser: User = JSON.parse(user);
-
-    return {
-      role: parsedUser.role,
-    };
+    return user ? { role: user.role } : null;
   },
   getIdentity: async () => {
-    const user = localStorage.getItem("user");
+    const user = await getSessionUser();
 
     if (!user) return null;
-    const parsedUser: User = JSON.parse(user);
 
     return {
-      id: parsedUser.id,
-      name: parsedUser.name,
-      email: parsedUser.email,
-      image: parsedUser.image,
-      role: parsedUser.role,
-      imageCldPubId: parsedUser.imageCldPubId,
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      role: user.role,
+      imageCldPubId: user.imageCldPubId,
     };
   },
 };
