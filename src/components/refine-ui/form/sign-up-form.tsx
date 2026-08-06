@@ -43,17 +43,17 @@ export const SignUpForm = () => {
       return;
     }
 
+    // Standard Better Auth registration payload (name, email, password)
     register({
       name,
       email,
       password,
-      role: "admin",
     });
   };
 
   return (
     <div className={cn("flex", "flex-col", "items-center", "justify-center", "px-6", "py-8", "min-h-svh")}>
-      <Card className={cn("sm:w-114", "p-12", "mt-6")}>
+      <Card className={cn("sm:w-[456px]", "p-12", "mt-6")}>
         <CardHeader className={cn("px-0")}>
           <CardTitle className={cn("text-green-600", "dark:text-green-400", "text-3xl", "font-semibold")}>
             Sign up (Admin Portal)
@@ -113,7 +113,7 @@ export const SignUpForm = () => {
               size="lg"
               className={cn("w-full", "mt-6", "bg-green-600", "hover:bg-green-700", "text-white")}
             >
-              Sign up as Admin
+              Sign up
             </Button>
           </form>
         </CardContent>
