@@ -144,3 +144,22 @@ export type Submission = {
   feedback?: string | null;
   student: User;
 };
+
+export type AttendanceRecord = {
+  id: number;
+  sessionId: number;
+  studentId: string;
+  status: "present" | "absent" | "late" | "excused";
+  note?: string | null;
+  student?: User;
+};
+
+export type AttendanceSession = {
+  id: number;
+  classId: number;
+  sessionDate: string;
+  notes?: string | null;
+  teacherId: string;
+  createdAt: string;
+  records: AttendanceRecord[];
+};

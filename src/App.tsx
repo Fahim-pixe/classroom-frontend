@@ -69,6 +69,9 @@ import AssignmentsList from "./pages/assignments/list";
 import AssignmentsCreate from "./pages/assignments/create";
 import AssignmentsShow from "./pages/assignments/show";
 
+import AttendanceList from "./pages/attendance/list";
+import AttendanceCreate from "./pages/attendance/create";
+
 function App() {
   return (
     <BrowserRouter>
@@ -159,12 +162,14 @@ function App() {
                     <Route path="confirm" element={<EnrollmentConfirm />} />
                   </Route>
                   <Route path="resources" element={<Resources />} />
-                  <Route path="assignments" element={<ModulePlaceholder title="Assignments" description="Assignment management is being connected to the Faculty and Learning workspaces." />} />
                   <Route path="learning/assignments" element={<ModulePlaceholder title="Assignments" description="Assignment management is being connected to the Faculty and Learning workspaces." />} />
                   <Route path="availability" element={<ModulePlaceholder title="Faculty Availability" description="Faculty availability and scheduling tools will appear here." />} />
                   <Route path="students" element={<ModulePlaceholder title="Student Directory" description="The student directory will provide searchable student profiles and enrollment context." />} />
                   <Route path="academic-records" element={<ModulePlaceholder title="Academic Records" description="Academic records will provide a protected view of student progress and history." />} />
-                  <Route path="attendance" element={<ModulePlaceholder title="Attendance" description="Attendance tracking and review will be available in the Learning workspace." />} />
+                  <Route path="attendance">
+                    <Route index element={<AttendanceList />} />
+                    <Route path="create" element={<AttendanceCreate />} />
+                  </Route>
                   <Route path="announcements" element={<ModulePlaceholder title="Announcements" description="Announcements will centralize updates for classes, faculty, and students." />} />
                   <Route path="admin/users" element={<ModulePlaceholder title="Users" description="User administration is reserved for authorized administrators." />} />
                   <Route path="roles-permissions" element={<ModulePlaceholder title="Roles & Permissions" description="Role and permission management is reserved for authorized administrators." />} />
