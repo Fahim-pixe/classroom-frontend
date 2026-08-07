@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import type { User } from "@/types";
 import { UserRole } from "@/types";
 import TeacherDashboard from "@/pages/teacher-dashboard";
+import { BACKEND_BASE_URL } from "@/constants";
 
 const roleColors = ["#f97316", "#0ea5e9", "#22c55e", "#a855f7"];
 
@@ -32,17 +33,17 @@ const AdminDashboard = () => {
 
   // Fetch from your existing stats.ts backend routes concurrently
   const { data: overviewRes, isLoading: loadingOverview } = useCustom({
-    url: "stats/overview",
+    url: `${BACKEND_BASE_URL}/stats/overview`,
     method: "get",
   }) as any;
   
   const { data: chartsRes, isLoading: loadingCharts } = useCustom({
-    url: "stats/charts",
+    url: `${BACKEND_BASE_URL}/stats/charts`,
     method: "get",
   }) as any;
   
   const { data: latestRes, isLoading: loadingLatest } = useCustom({
-    url: "stats/latest",
+    url: `${BACKEND_BASE_URL}/stats/latest`,
     method: "get",
   }) as any;
 
