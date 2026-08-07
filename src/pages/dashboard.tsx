@@ -28,33 +28,73 @@ import { BACKEND_BASE_URL } from "@/constants";
 
 const roleColors = ["#f97316", "#0ea5e9", "#22c55e", "#a855f7"];
 
+const emptyOverview = {
+  users: 0,
+  teachers: 0,
+  admins: 0,
+  subjects: 0,
+  departments: 0,
+  classes: 0,
+};
+
+const emptyCharts = {
+  usersByRole: [],
+  subjectsByDepartment: [],
+  classesBySubject: [],
+};
+
+const emptyLatest = {
+  latestClasses: [],
+  latestTeachers: [],
+};
+
 const AdminDashboard = () => {
   const Link = useLink();
 
-  // Fetch from your existing stats.ts backend routes concurrently
-  const { data: overviewRes, isLoading: loadingOverview } = useCustom({
+  const {
+    data: overviewRes,
+    isLoading: loadingOverview,
+    isError: overviewError,
+  } = useCustom({
     url: `${BACKEND_BASE_URL}/stats/overview`,
     method: "get",
+    queryOptions: { retry: 1 },
   }) as any;
-  
-  const { data: chartsRes, isLoading: loadingCharts } = useCustom({
+
+  const {
+    data: chartsRes,
+    isLoading: loadingCharts,
+    isError: chartsError,
+  } = useCustom({
     url: `${BACKEND_BASE_URL}/stats/charts`,
     method: "get",
+    queryOptions: { retry: 1 },
   }) as any;
-  
-  const { data: latestRes, isLoading: loadingLatest } = useCustom({
+
+  const {
+    data: latestRes,
+    isLoading: loadingLatest,
+    isError: latestError,
+  } = useCustom({
     url: `${BACKEND_BASE_URL}/stats/latest`,
     method: "get",
+    queryOptions: { retry: 1 },
   }) as any;
 
   const isLoading = loadingOverview || loadingCharts || loadingLatest;
+  const hasError = overviewError || chartsError || latestError;
 
-  // Extract the inner data objects based on your backend response structure
-  const overview = overviewRes?.data as any;
-  const charts = chartsRes?.data as any;
-  const latest = latestRes?.data as any;
+  const overview = overviewRes?.data ?? emptyOverview;
+  const charts = {
+    ...emptyCharts,
+    ...(chartsRes?.data ?? {}),
+  };
+  const latest = {
+    ...emptyLatest,
+    ...(latestRes?.data ?? {}),
+  };
 
-  if (isLoading || !overview || !charts || !latest) {
+  if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
         <p className="text-muted-foreground animate-pulse">Loading dashboard statistics...</p>
@@ -77,6 +117,13 @@ const AdminDashboard = () => {
         <h1 className="page-title">Dashboard</h1>
         <p className="text-muted-foreground">A quick snapshot of the latest activity and key metrics.</p>
       </div>
+      {hasError && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardContent className="pt-6 text-sm text-amber-900">
+            Some dashboard statistics could not be loaded. The dashboard is showing safe empty-state values; refresh the page to try again.
+          </CardContent>
+        </Card>
+      )}
 
       {/* KPI CARDS */}
       <Card className="hover:shadow-md transition-shadow">
