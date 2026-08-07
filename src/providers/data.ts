@@ -1,4 +1,7 @@
-import { createDataProvider, CreateDataProviderOptions } from "@refinedev/rest";
+import {
+  createDataProvider,
+  CreateDataProviderOptions,
+} from "@refinedev/rest";
 
 import { CreateResponse, GetOneResponse, ListResponse } from "@/types";
 import { BACKEND_BASE_URL } from "@/constants";
@@ -27,25 +30,47 @@ const options: CreateDataProviderOptions = {
         }
 
         if (resource === "departments") {
-          if (field === "name" || field === "code") params.search = value;
+          if (field === "name" || field === "code") {
+            params.search = value;
+          }
         }
 
         if (resource === "users") {
-          if (field === "search" || field === "name" || field === "email") {
+          if (
+            field === "search" ||
+            field === "name" ||
+            field === "email"
+          ) {
             params.search = value;
           }
         }
 
         if (resource === "subjects") {
-          if (field === "department") params.department = value;
-          if (field === "name" || field === "code") params.search = value;
+          if (field === "department") {
+            params.department = value;
+          }
+
+          if (field === "name" || field === "code") {
+            params.search = value;
+          }
         }
 
         if (resource === "classes") {
-          if (field === "name") params.search = value;
-          if (field === "subject") params.subject = value;
-          if (field === "teacher") params.teacher = value;
-          if (field === "teacherId") params.teacherId = value;
+          if (field === "name") {
+            params.search = value;
+          }
+
+          if (field === "subject") {
+            params.subject = value;
+          }
+
+          if (field === "teacher") {
+            params.teacher = value;
+          }
+
+          if (field === "teacherId") {
+            params.teacherId = value;
+          }
         }
       });
 
@@ -79,6 +104,14 @@ const options: CreateDataProviderOptions = {
 
     mapResponse: async (response) => {
       const json: GetOneResponse = await response.json();
+      return json.data ?? {};
+    },
+  },
+
+  custom: {
+    buildBodyParams: async ({ payload }: { payload?: any }) => payload,
+    mapResponse: async (response: Response) => {
+      const json = (await response.json()) as any;
       return json.data ?? {};
     },
   },
