@@ -120,3 +120,27 @@ export type SignUpPayload = {
   imageCldPubId?: string;
   role: UserRole;
 };
+
+export type Assignment = {
+  id: number;
+  classId: number;
+  authorId?: string;
+  title: string;
+  description: string;
+  dueAt?: string | null;
+  maxPoints: number;
+  createdAt?: string;
+  updatedAt?: string;
+  className?: string;
+};
+
+export type Submission = {
+  id: number;
+  assignmentId: number;
+  studentId: string;
+  content: string;
+  submittedAt: string;
+  grade?: number | null;
+  feedback?: string | null;
+  student: User;
+};

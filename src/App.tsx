@@ -65,6 +65,10 @@ import EnrollmentConfirm from "./pages/enrollments/confirm";
 import ModulePlaceholder from "./pages/module-placeholder";
 import Resources from "./pages/resources";
 
+import AssignmentsList from "./pages/assignments/list";
+import AssignmentsCreate from "./pages/assignments/create";
+import AssignmentsShow from "./pages/assignments/show";
+
 function App() {
   return (
     <BrowserRouter>
@@ -122,7 +126,7 @@ function App() {
                 >
                   <Route path="/" element={<Dashboard />} />
                   <Route path="profile" element={<Profile />} />
-                  
+
                   <Route path="subjects">
                     <Route index element={<SubjectsList />} />
                     <Route path="create" element={<SubjectsCreate />} />
@@ -165,6 +169,12 @@ function App() {
                   <Route path="admin/users" element={<ModulePlaceholder title="Users" description="User administration is reserved for authorized administrators." />} />
                   <Route path="roles-permissions" element={<ModulePlaceholder title="Roles & Permissions" description="Role and permission management is reserved for authorized administrators." />} />
                   <Route path="settings" element={<ModulePlaceholder title="Settings" description="Application settings will be available here for authorized administrators." />} />
+                  <Route path="assignments">
+                    <Route path="" element={<AssignmentsList />} />
+                    <Route path="create" element={<AssignmentsCreate />} />
+                    <Route path="show/:id" element={<AssignmentsShow />} />
+                  </Route>
+                  <Route path="learning/assignments" element={<AssignmentsList />} />
                 </Route>
 
                 {/* 2. PUBLIC AUTH ROUTES */}
