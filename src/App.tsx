@@ -25,7 +25,7 @@ import { ThemeProvider } from "./components/refine-ui/theme/theme-provider";
 import "./App.css";
 
 // Icons
-import { BookOpen, GraduationCap, Home, Building2, Users, ClipboardList } from "lucide-react";
+import { BookOpen, GraduationCap, Home, Building2, Users, ClipboardList, Clock3, UserRound, ShieldCheck, Settings, FolderOpen, Megaphone, ClipboardCheck, FileText, CalendarCheck } from "lucide-react";
 
 // Auth Pages
 import { Login } from "./pages/login";
@@ -62,6 +62,7 @@ import FacultyShow from "./pages/faculty/show";
 import EnrollmentsCreate from "./pages/enrollments/create";
 import EnrollmentsJoin from "./pages/enrollments/join";
 import EnrollmentConfirm from "./pages/enrollments/confirm";
+import ModulePlaceholder from "./pages/module-placeholder";
 
 function App() {
   return (
@@ -80,46 +81,28 @@ function App() {
                 projectId: "oQXqvS-Zw4CAo-QWHyYk",
               }}
               resources={[
-                {
-                  name: "dashboard",
-                  list: "/",
-                  meta: { label: "Home", icon: <Home /> }
-                },
-                {
-                  name: "subjects",
-                  list: "/subjects",
-                  create: "/subjects/create",
-                  edit: "/subjects/edit/:id", // <-- ADD THIS
-                  show: "/subjects/show/:id",
-                  meta: { label: "Subjects", icon: <BookOpen />},
-                },
-                {
-                  name: "classes",
-                  list: "/classes",
-                  create: "/classes/create",
-                  edit: "/classes/edit/:id", // <-- ADD THIS
-                  show: "/classes/show/:id",
-                  meta: { label: "Classes", icon: <GraduationCap />}
-                },
-                {
-                  name: "departments",
-                  list: "/departments",
-                  create: "/departments/create",
-                  edit: "/departments/edit/:id", // <-- ADD THIS
-                  show: "/departments/show/:id",
-                  meta: { label: "Departments", icon: <Building2 />}
-                },
-                {
-                  name: "users",
-                  list: "/users",
-                  show: "/users/show/:id",
-                  meta: { label: "Faculty", icon: <Users />}
-                },
-                {
-                  name: "enrollments",
-                  list: "/enrollments/create",
-                  meta: { label: "Enroll", icon: <ClipboardList />}
-                }
+                { name: "dashboard", list: "/", meta: { label: "Dashboard", icon: <Home /> } },
+                { name: "academic", meta: { label: "Academic", group: true } },
+                { name: "departments", list: "/departments", create: "/departments/create", edit: "/departments/edit/:id", show: "/departments/show/:id", meta: { label: "Departments", icon: <Building2 />, parent: "academic" } },
+                { name: "subjects", list: "/subjects", create: "/subjects/create", edit: "/subjects/edit/:id", show: "/subjects/show/:id", meta: { label: "Subjects", icon: <BookOpen />, parent: "academic" } },
+                { name: "classes", list: "/classes", create: "/classes/create", edit: "/classes/edit/:id", show: "/classes/show/:id", meta: { label: "Classes", icon: <GraduationCap />, parent: "academic" } },
+                { name: "faculty", meta: { label: "Faculty", group: true } },
+                { name: "faculty-members", list: "/users", show: "/users/show/:id", meta: { label: "Faculty Members", icon: <Users />, parent: "faculty" } },
+                { name: "assignments", list: "/assignments", meta: { label: "Assignments", icon: <ClipboardList />, parent: "faculty" } },
+                { name: "availability", list: "/availability", meta: { label: "Availability", icon: <Clock3 />, parent: "faculty" } },
+                { name: "students", meta: { label: "Students", group: true } },
+                { name: "student-directory", list: "/students", meta: { label: "Student Directory", icon: <UserRound />, parent: "students" } },
+                { name: "enrollments", list: "/enrollments/create", meta: { label: "Enrollments", icon: <ClipboardList />, parent: "students" } },
+                { name: "academic-records", list: "/academic-records", meta: { label: "Academic Records", icon: <FileText />, parent: "students" } },
+                { name: "learning", meta: { label: "Learning", group: true } },
+                { name: "resources", list: "/resources", meta: { label: "Resources & Materials", icon: <FolderOpen />, parent: "learning" } },
+                { name: "learning-assignments", list: "/learning/assignments", meta: { label: "Assignments", icon: <ClipboardCheck />, parent: "learning" } },
+                { name: "attendance", list: "/attendance", meta: { label: "Attendance", icon: <CalendarCheck />, parent: "learning" } },
+                { name: "announcements", list: "/announcements", meta: { label: "Announcements", icon: <Megaphone />, parent: "learning" } },
+                { name: "administration", meta: { label: "Administration", group: true } },
+                { name: "admin-users", list: "/admin/users", meta: { label: "Users", icon: <Users />, parent: "administration" } },
+                { name: "roles-permissions", list: "/roles-permissions", meta: { label: "Roles & Permissions", icon: <ShieldCheck />, parent: "administration" } },
+                { name: "settings", list: "/settings", meta: { label: "Settings", icon: <Settings />, parent: "administration" } },
               ]}
             >
               <Routes>
@@ -167,10 +150,20 @@ function App() {
 
                   <Route path="enrollments">
                     <Route path="create" element={<EnrollmentsCreate />} />
-
                     <Route path="join" element={<EnrollmentsJoin />} />
                     <Route path="confirm" element={<EnrollmentConfirm />} />
                   </Route>
+                  <Route path="resources" element={<ModulePlaceholder title="Resources & Materials" description="A centralized space for course resources, files, links, and learning materials." />} />
+                  <Route path="assignments" element={<ModulePlaceholder title="Assignments" description="Assignment management is being connected to the Faculty and Learning workspaces." />} />
+                  <Route path="learning/assignments" element={<ModulePlaceholder title="Assignments" description="Assignment management is being connected to the Faculty and Learning workspaces." />} />
+                  <Route path="availability" element={<ModulePlaceholder title="Faculty Availability" description="Faculty availability and scheduling tools will appear here." />} />
+                  <Route path="students" element={<ModulePlaceholder title="Student Directory" description="The student directory will provide searchable student profiles and enrollment context." />} />
+                  <Route path="academic-records" element={<ModulePlaceholder title="Academic Records" description="Academic records will provide a protected view of student progress and history." />} />
+                  <Route path="attendance" element={<ModulePlaceholder title="Attendance" description="Attendance tracking and review will be available in the Learning workspace." />} />
+                  <Route path="announcements" element={<ModulePlaceholder title="Announcements" description="Announcements will centralize updates for classes, faculty, and students." />} />
+                  <Route path="admin/users" element={<ModulePlaceholder title="Users" description="User administration is reserved for authorized administrators." />} />
+                  <Route path="roles-permissions" element={<ModulePlaceholder title="Roles & Permissions" description="Role and permission management is reserved for authorized administrators." />} />
+                  <Route path="settings" element={<ModulePlaceholder title="Settings" description="Application settings will be available here for authorized administrators." />} />
                 </Route>
 
                 {/* 2. PUBLIC AUTH ROUTES */}
