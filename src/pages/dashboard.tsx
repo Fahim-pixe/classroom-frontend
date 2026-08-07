@@ -126,41 +126,16 @@ const QuickAction = ({
 
 const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
   const Link = useLink();
-  const {
-    data: overviewRes,
-    isLoading: loadingOverview,
-    isError: overviewError,
-  } = useCustom({
-    url: `${BACKEND_BASE_URL}/stats/overview`,
+  const { data: dashboardRes, isLoading, isError: hasError } = useCustom({
+    url: `${BACKEND_BASE_URL}/stats/dashboard`,
     method: "get",
     queryOptions: { retry: 1 },
   }) as any;
-
-  const {
-    data: chartsRes,
-    isLoading: loadingCharts,
-    isError: chartsError,
-  } = useCustom({
-    url: `${BACKEND_BASE_URL}/stats/charts`,
-    method: "get",
-    queryOptions: { retry: 1 },
-  }) as any;
-
-  const {
-    data: latestRes,
-    isLoading: loadingLatest,
-    isError: latestError,
-  } = useCustom({
-    url: `${BACKEND_BASE_URL}/stats/latest`,
-    method: "get",
-    queryOptions: { retry: 1 },
-  }) as any;
-
-  const overview = { ...emptyOverview, ...(overviewRes?.data ?? {}) };
-  const charts = { ...emptyCharts, ...(chartsRes?.data ?? {}) };
-  const latest = { ...emptyLatest, ...(latestRes?.data ?? {}) };
-  const isLoading = loadingOverview || loadingCharts || loadingLatest;
-  const hasError = overviewError || chartsError || latestError;
+  const dashboard = dashboardRes?.data ?? {};
+  const metrics = dashboard.metrics ?? {};
+  const overview = { ...emptyOverview, users: metrics.totalStudents ?? 0, teachers: metrics.faculty ?? 0, classes: metrics.activeClasses ?? 0, subjects: metrics.subjects ?? 0 };
+  const charts = { ...emptyCharts, usersByRole: Array.isArray(dashboard.studentDistribution) ? dashboard.studentDistribution.map((entry: any) => ({ role: entry.departmentName, total: entry.students })) : [] };
+  const latest = { ...emptyLatest, latestClasses: Array.isArray(dashboard.recentActivity) ? dashboard.recentActivity : [], latestTeachers: [] };
   const firstName = currentUser?.name?.split(" ")[0] || "there";
 
   if (isLoading) {
@@ -185,22 +160,16 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
         { name: "Admins", value: Math.max(toNumber(overview.admins), 1) },
       ];
 
-  const monthlyData = months.map((month, index) => {
-    const classes = toNumber(overview.classes);
-    const subjects = toNumber(overview.subjects);
-    return {
-      month,
-      current: Math.max(20, Math.round((classes || 1) * (0.62 + index * 0.035))),
-      average: Math.max(12, Math.round((subjects || 1) * (0.34 + index * 0.018))),
-    };
-  });
+  const monthlyData = Array.isArray(dashboard.enrollmentTrend)
+    ? dashboard.enrollmentTrend.map((entry: any) => ({ month: entry.month, current: toNumber(entry.totalStudents ?? entry.newEnrollments), average: toNumber(entry.newEnrollments) }))
+    : [];
 
   return (
     <div className="min-h-full bg-[#fcfcfd] px-1 pb-10 text-slate-900 sm:px-2">
       <section className="flex flex-col justify-between gap-6 pb-10 pt-2 md:flex-row md:items-start">
         <div>
           <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Welcome back, {firstName}</h1>
-          <p className="mt-4 text-lg text-slate-500">Track, manage and forecast your classroom activity.</p>
+          <p className="mt-4 text-lg text-slate-500">Track, manage and monitor your classes, students and academic activities.</p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" className="h-12 rounded-xl border-slate-200 bg-white px-5 text-base shadow-sm" asChild>
@@ -218,13 +187,13 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
 
       <section className="border-b border-slate-200 pb-8">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-slate-900">Start creating content</h2>
+          <h2 className="text-2xl font-semibold text-slate-900">Quick actions</h2>
           <Ellipsis className="h-5 w-5 text-slate-400" />
         </div>
         <div className="grid gap-4 lg:grid-cols-3">
-          <QuickAction title="Add Subject" description="Add yourself or import from CSV" icon={UserRoundPlus} to="/subjects/create" />
-          <QuickAction title="Add Class" description="Add yourself or import from CSV" icon={UserRoundPlus} to="/classes/create" />
-          <QuickAction title="Join Class" description="Dive into the editor and start creating" icon={PenLine} to="/classes" />
+          <QuickAction title="Add Subject" description="Create and configure academic content for your classroom." icon={UserRoundPlus} to="/subjects/create" />
+          <QuickAction title="Add Class" description="Create and configure academic content for your classroom." icon={UserRoundPlus} to="/classes/create" />
+          <QuickAction title="Join Class" description="Join an existing class using its class code or invitation." icon={PenLine} to="/classes" />
         </div>
       </section>
 
@@ -245,8 +214,8 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
         <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
           <CardHeader className="flex flex-row items-start justify-between space-y-0 px-8 pb-0 pt-8">
             <div>
-              <CardTitle className="text-xl">Classroom breakdown</CardTitle>
-              <p className="mt-2 text-sm text-slate-500">Distribution of users by role.</p>
+              <CardTitle className="text-xl">Student distribution</CardTitle>
+              <p className="mt-2 text-sm text-slate-500">Where students are distributed academically.</p>
             </div>
             <Ellipsis className="h-5 w-5 text-slate-400" />
           </CardHeader>
@@ -279,15 +248,15 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
         <Card className="overflow-hidden rounded-2xl border-slate-200 bg-white shadow-sm">
           <CardHeader className="flex flex-row items-start justify-between space-y-0 px-8 pb-0 pt-8">
             <div>
-              <CardTitle className="text-xl">Classroom activity</CardTitle>
-              <p className="mt-2 text-sm text-slate-500">Track how your classroom compares with its recent average.</p>
+              <CardTitle className="text-xl">Student enrollment trend</CardTitle>
+              <p className="mt-2 text-sm text-slate-500">Track how student enrollment has changed throughout the academic year.</p>
             </div>
             <Ellipsis className="h-5 w-5 text-slate-400" />
           </CardHeader>
           <CardContent className="px-8 pb-8 pt-4">
             <div className="mb-3 flex justify-end gap-5 text-sm text-slate-500">
-              <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-violet-600" /> Current activity</span>
-              <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-violet-300" /> Recent average</span>
+              <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-violet-600" /> Total students</span>
+              <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-violet-300" /> New enrollments</span>
             </div>
             <div className="h-80 min-h-[260px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -304,9 +273,44 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
         </Card>
       </section>
 
-      {latest.latestClasses.length === 0 && latest.latestTeachers.length === 0 && (
-        <p className="mt-6 text-sm text-slate-500">Your latest classes and teacher activity will appear here as you add classroom content.</p>
-      )}
+      <Card className="mt-6 rounded-2xl border-slate-200 bg-white shadow-sm">
+        <CardHeader><CardTitle>Recent activity</CardTitle></CardHeader>
+        <CardContent>
+          {latest.latestClasses.length === 0 ? (
+            <p className="text-sm text-slate-500">No recent activity is available yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {latest.latestClasses.slice(0, 6).map((item: any, index: number) => (
+                <div key={`${item.type}-${item.createdAt}-${index}`} className="flex items-start justify-between gap-4 border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                  <div><p className="font-medium text-slate-800">{item.title}</p><p className="text-sm text-slate-500">{item.description}</p></div>
+                  <span className="whitespace-nowrap text-xs text-slate-400">{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
+  const Link = useLink();
+  const { data: dashboardRes, isLoading, isError } = useCustom({ url: `${BACKEND_BASE_URL}/stats/dashboard`, method: "get", queryOptions: { retry: 1 } }) as any;
+  const dashboard = dashboardRes?.data ?? {};
+  const metrics = dashboard.metrics ?? {};
+  const schedule = Array.isArray(dashboard.todaySchedule) ? dashboard.todaySchedule : [];
+  const assignments = Array.isArray(dashboard.upcomingAssignments) ? dashboard.upcomingAssignments : [];
+  const announcements = Array.isArray(dashboard.recentAnnouncements) ? dashboard.recentAnnouncements : [];
+  const firstName = currentUser?.name?.split(" ")[0] || "there";
+  if (isLoading) return <div className="flex min-h-96 items-center justify-center"><p className="animate-pulse text-sm text-slate-500">Loading your dashboard...</p></div>;
+  return (
+    <div className="min-h-full bg-[#fcfcfd] px-1 pb-10 text-slate-900 sm:px-2">
+      <section className="flex flex-col justify-between gap-6 pb-10 pt-2 md:flex-row md:items-start"><div><h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Welcome back, {firstName}</h1><p className="mt-4 text-lg text-slate-500">Stay on top of your classes, assignments and academic progress.</p></div><Button className="h-12 rounded-xl bg-violet-600 px-5 text-base shadow-sm hover:bg-violet-700" asChild><Link to="/classes"><Plus className="mr-2 h-5 w-5" /> Join class</Link></Button></section>
+      {isError && <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Some personal dashboard data could not be loaded.</div>}
+      <section className="grid gap-5 py-2 sm:grid-cols-2 xl:grid-cols-4"><StatCard label="My classes" value={toNumber(metrics.myClasses)} trend="" trendLabel="active classes" icon={Layers3} /><StatCard label="Attendance" value={metrics.attendance == null ? "—" : `${metrics.attendance}%`} trend="" trendLabel="current rate" icon={Users} /><StatCard label="Assignments" value={toNumber(metrics.assignments)} trend="" trendLabel="upcoming" icon={PenLine} /><StatCard label="Upcoming" value={toNumber(metrics.upcoming)} trend="" trendLabel="due soon" icon={GraduationCap} /></section>
+      <section className="mt-8 grid gap-6 xl:grid-cols-[1.3fr_1fr]"><Card className="rounded-2xl border-slate-200 bg-white shadow-sm"><CardHeader><CardTitle>Today&apos;s classes</CardTitle></CardHeader><CardContent>{schedule.length === 0 ? <p className="text-sm text-slate-500">No classes scheduled today.</p> : <div className="space-y-3">{schedule.map((item: any) => <div key={item.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3"><div><p className="font-medium">{item.subjectName || item.name}</p><p className="text-sm text-slate-500">{item.name}</p></div><span className="text-sm text-slate-500">{item.schedules?.[0]?.startTime || "Scheduled"}</span></div>)}</div>}</CardContent></Card><Card className="rounded-2xl border-slate-200 bg-white shadow-sm"><CardHeader><CardTitle>Upcoming assignments</CardTitle></CardHeader><CardContent>{assignments.length === 0 ? <p className="text-sm text-slate-500">No upcoming assignments.</p> : <div className="space-y-3">{assignments.map((item: any) => <div key={item.id} className="border-b border-slate-100 pb-3 last:border-0"><p className="font-medium">{item.title}</p><p className="text-sm text-slate-500">{item.className} · {item.dueAt ? new Date(item.dueAt).toLocaleDateString() : "No due date"}</p></div>)}</div>}</CardContent></Card></section>
+      <Card className="mt-6 rounded-2xl border-slate-200 bg-white shadow-sm"><CardHeader><CardTitle>Recent announcements</CardTitle></CardHeader><CardContent>{announcements.length === 0 ? <p className="text-sm text-slate-500">No recent announcements.</p> : <div className="space-y-3">{announcements.map((item: any) => <div key={item.id} className="border-b border-slate-100 pb-3 last:border-0"><p className="font-medium">{item.title}</p><p className="text-sm text-slate-500">{item.className} · {new Date(item.createdAt).toLocaleDateString()}</p></div>)}</div>}</CardContent></Card>
     </div>
   );
 };
@@ -321,7 +325,9 @@ const Dashboard = () => {
   if (currentUser?.role === UserRole.TEACHER) {
     return <TeacherDashboard teacher={currentUser} />;
   }
-
+  if (currentUser?.role === UserRole.STUDENT) {
+    return <StudentDashboard currentUser={currentUser} />;
+  }
   return <AdminDashboard currentUser={currentUser} />;
 };
 
