@@ -63,6 +63,7 @@ import EnrollmentsCreate from "./pages/enrollments/create";
 import EnrollmentsJoin from "./pages/enrollments/join";
 import EnrollmentConfirm from "./pages/enrollments/confirm";
 import ModulePlaceholder from "./pages/module-placeholder";
+import Resources from "./pages/resources";
 
 function App() {
   return (
@@ -153,7 +154,7 @@ function App() {
                     <Route path="join" element={<EnrollmentsJoin />} />
                     <Route path="confirm" element={<EnrollmentConfirm />} />
                   </Route>
-                  <Route path="resources" element={<ModulePlaceholder title="Resources & Materials" description="A centralized space for course resources, files, links, and learning materials." />} />
+                  <Route path="resources" element={<Resources />} />
                   <Route path="assignments" element={<ModulePlaceholder title="Assignments" description="Assignment management is being connected to the Faculty and Learning workspaces." />} />
                   <Route path="learning/assignments" element={<ModulePlaceholder title="Assignments" description="Assignment management is being connected to the Faculty and Learning workspaces." />} />
                   <Route path="availability" element={<ModulePlaceholder title="Faculty Availability" description="Faculty availability and scheduling tools will appear here." />} />
