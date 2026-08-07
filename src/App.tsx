@@ -162,7 +162,6 @@ function App() {
                     <Route path="confirm" element={<EnrollmentConfirm />} />
                   </Route>
                   <Route path="resources" element={<Resources />} />
-                  <Route path="learning/assignments" element={<ModulePlaceholder title="Assignments" description="Assignment management is being connected to the Faculty and Learning workspaces." />} />
                   <Route path="availability" element={<ModulePlaceholder title="Faculty Availability" description="Faculty availability and scheduling tools will appear here." />} />
                   <Route path="students" element={<ModulePlaceholder title="Student Directory" description="The student directory will provide searchable student profiles and enrollment context." />} />
                   <Route path="academic-records" element={<ModulePlaceholder title="Academic Records" description="Academic records will provide a protected view of student progress and history." />} />
