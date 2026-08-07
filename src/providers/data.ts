@@ -111,8 +111,8 @@ const options: CreateDataProviderOptions = {
   custom: {
     buildBodyParams: async ({ payload }: { payload?: any }) => payload,
     mapResponse: async (response: Response) => {
-      const json = (await response.json()) as any;
-      return json.data ?? {};
+      const json = (await response.json());
+      return json as any;
     },
   },
 };
