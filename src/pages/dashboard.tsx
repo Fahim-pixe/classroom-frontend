@@ -37,25 +37,33 @@ const emptyLatest = { latestClasses: [], latestTeachers: [] };
 type AdminDashboardProps = { currentUser?: User };
 type RoleRow = { name: string; value: number };
 
-type DashboardApiResponse = {
-  data?: {
-    metrics?: {
-      totalStudents?: number;
-      faculty?: number;
-      activeClasses?: number;
-      subjects?: number;
-      comparisons?: {
-        totalStudents?: string;
-        faculty?: string;
-        activeClasses?: string;
-        subjects?: string;
-      };
+type DashboardPayload = {
+  role?: string;
+  metrics?: {
+    totalStudents?: number;
+    faculty?: number;
+    activeClasses?: number;
+    subjects?: number;
+    myClasses?: number;
+    attendance?: number;
+    assignments?: number;
+    upcoming?: number;
+    comparisons?: {
+      totalStudents?: string;
+      faculty?: string;
+      activeClasses?: string;
+      subjects?: string;
     };
-    studentDistribution?: Array<{ departmentName?: string; students?: number | string }>;
-    recentActivity?: Array<{ type?: string; title?: string; description?: string; createdAt?: string }>;
-    enrollmentTrend?: EnrollmentTrendEntry[];
   };
+  studentDistribution?: Array<{ departmentName?: string; students?: number | string }>;
+  recentActivity?: Array<{ type?: string; title?: string; description?: string; createdAt?: string }>;
+  enrollmentTrend?: EnrollmentTrendEntry[];
+  todaySchedule?: ScheduleItem[];
+  upcomingAssignments?: Assignment[];
+  recentAnnouncements?: AnnouncementItem[];
 };
+
+type DashboardApiResponse = DashboardPayload & { data?: DashboardPayload };
 
 type EnrollmentTrendEntry = {
   month?: string;
@@ -146,7 +154,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
     url: API_ENDPOINTS.DASHBOARD_STATS,
     method: "get",
     queryOptions: { retry: 1 },
-  }) as CustomQueryResponse<DashboardApiResponse>;
+  }) as unknown as CustomQueryResponse<DashboardApiResponse>;
 
   const dashboard = dashboardRes?.data ?? dashboardRes ?? {};
   const metrics = dashboard.metrics ?? {};
@@ -309,7 +317,7 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
     url: API_ENDPOINTS.DASHBOARD_STATS,
     method: "get",
     queryOptions: { retry: 1 },
-  }) as CustomQueryResponse<DashboardApiResponse>;
+  }) as unknown as CustomQueryResponse<DashboardApiResponse>;
 
   const dashboard = dashboardRes?.data ?? dashboardRes ?? {};
   const metrics = dashboard.metrics ?? {};
