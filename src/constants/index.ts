@@ -29,6 +29,7 @@ export const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const API_ENDPOINTS = {
   DASHBOARD_STATS: "/stats/dashboard",
+  RESOURCE_UPLOAD_SIGNATURE: "/resources/upload-signature",
 };
 
 export const ROUTES = {

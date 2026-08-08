@@ -6,6 +6,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetIdentity } from "@refinedev/core";
+import { API_ENDPOINTS, BACKEND_BASE_URL } from "@/constants";
 
 type Resource = {
   id: number;
@@ -48,6 +49,8 @@ export default function Resources() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [resourceUrl, setResourceUrl] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState("");
   const [createCategory, setCreateCategory] = useState("lecture_notes");
 
   const filters = useMemo(() => {
@@ -72,18 +75,43 @@ export default function Resources() {
   const classesData = classesResult.data ?? [];
   const canCreate = identity?.role === "teacher" || identity?.role === "admin";
 
-  const submitCreate = (event: React.FormEvent) => {
+  const submitCreate = async (event: React.FormEvent) => {
     event.preventDefault();
-    createResource(
-      { resource: "resources", values: { classId: Number(classId), title, description, category: createCategory, resourceUrl, isPublished: true } },
-      {
-        onSuccess: () => {
-          setShowCreate(false);
-          setClassId(""); setTitle(""); setDescription(""); setResourceUrl("");
-          refetch();
-        },
+    setUploadError("");
+    let finalResourceUrl = resourceUrl.trim();
+
+    try {
+      if (selectedFile) {
+        const signatureResponse = await fetch(`${BACKEND_BASE_URL}${API_ENDPOINTS.RESOURCE_UPLOAD_SIGNATURE}`, { method: "POST", credentials: "include" });
+        const signaturePayload = await signatureResponse.json();
+        if (!signatureResponse.ok) throw new Error(signaturePayload.error || "Upload signing failed");
+        const signature = signaturePayload.data;
+        const uploadBody = new FormData();
+        uploadBody.append("file", selectedFile);
+        uploadBody.append("api_key", signature.apiKey);
+        uploadBody.append("timestamp", String(signature.timestamp));
+        uploadBody.append("folder", signature.folder);
+        uploadBody.append("signature", signature.signature);
+        const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${signature.cloudName}/${signature.resourceType}/upload`, { method: "POST", body: uploadBody });
+        const uploadPayload = await uploadResponse.json();
+        if (!uploadResponse.ok || !uploadPayload.secure_url) throw new Error(uploadPayload.error?.message || "Cloudinary upload failed");
+        finalResourceUrl = uploadPayload.secure_url;
       }
-    );
+
+      if (!finalResourceUrl) throw new Error("Add a resource URL or choose a document to upload");
+      createResource(
+        { resource: "resources", values: { classId: Number(classId), title, description, category: createCategory, resourceUrl: finalResourceUrl, mimeType: selectedFile?.type, fileSizeBytes: selectedFile?.size, isPublished: true } },
+        {
+          onSuccess: () => {
+            setShowCreate(false);
+            setClassId(""); setTitle(""); setDescription(""); setResourceUrl(""); setSelectedFile(null);
+            refetch();
+          },
+        }
+      );
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Upload failed");
+    }
   };
 
   const toggleFavorite = (resource: Resource) => {
@@ -112,9 +140,11 @@ export default function Resources() {
       {showCreate && canCreate && <Card className="rounded-2xl border-violet-100 shadow-sm"><CardHeader><CardTitle>Add a resource link</CardTitle></CardHeader><CardContent><form onSubmit={submitCreate} className="grid gap-4 md:grid-cols-2">
         <select value={classId} onChange={(event) => setClassId(event.target.value)} required className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"><option value="">Select class</option>{classesData.map((item: any) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
         <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Title" required />
-        <Input value={resourceUrl} onChange={(event) => setResourceUrl(event.target.value)} placeholder="File or link URL" type="url" required />
+        <Input value={resourceUrl} onChange={(event) => setResourceUrl(event.target.value)} placeholder="File or link URL (optional when uploading)" type="url" required={!selectedFile} />
+        <Input type="file" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} accept="application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,image/*,video/*" />
         <select value={createCategory} onChange={(event) => setCreateCategory(event.target.value)} className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm">{Object.entries(categoryLabels).filter(([key]) => key !== "all").map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
         <Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Short description (optional)" className="md:col-span-2" />
+        {uploadError && <p className="text-sm text-destructive md:col-span-2">{uploadError}</p>}
         <div className="flex gap-3 md:col-span-2"><Button type="submit" disabled={mutation.isPending} className="rounded-xl bg-violet-600 hover:bg-violet-700">{mutation.isPending ? "Saving…" : "Save material"}</Button><Button type="button" variant="outline" onClick={() => setShowCreate(false)} className="rounded-xl">Cancel</Button></div>
       </form></CardContent></Card>}
 
