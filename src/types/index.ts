@@ -163,3 +163,22 @@ export type AttendanceSession = {
   createdAt: string;
   records: AttendanceRecord[];
 };
+
+export type GradebookEntry = {
+  id: number;
+  classId: number;
+  teacherId: string;
+  studentId: string;
+  title: string;
+  points: number;
+  maxPoints: number;
+  feedback?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  student?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  className?: string;
+};

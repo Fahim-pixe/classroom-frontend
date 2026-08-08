@@ -1,5 +1,10 @@
 import { GraduationCap, School } from "lucide-react";
 
+export const APP_CONFIG = {
+  NAME: "Norvyx University",
+  SUPPORT_EMAIL: "support@norvyx.edu",
+};
+
 export const USER_ROLES = {
   STUDENT: "student",
   TEACHER: "teacher",
@@ -18,6 +23,29 @@ export const ROLE_OPTIONS = [
     icon: School,
   },
 ];
+
+export const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+export const BASE_URL = import.meta.env.VITE_API_URL;
+
+export const API_ENDPOINTS = {
+  DASHBOARD_STATS: "/stats/dashboard",
+};
+
+export const ROUTES = {
+  HOME: "/",
+  SUBJECTS: {
+    LIST: "/subjects",
+    CREATE: "/subjects/create",
+  },
+  CLASSES: {
+    LIST: "/classes",
+    CREATE: "/classes/create",
+  },
+  USERS: "/users",
+  ASSIGNMENTS: {
+    LIST: "/assignments",
+  },
+};
 
 export const DEPARTMENTS = [
   "Computer Science",
@@ -47,7 +75,7 @@ export const DEPARTMENT_OPTIONS = DEPARTMENTS.map((dept) => ({
   label: dept,
 }));
 
-export const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB in bytes
+export const MAX_FILE_SIZE = 3 * 1024 * 1024;
 export const ALLOWED_TYPES = [
   "image/png",
   "image/jpeg",
@@ -55,15 +83,9 @@ export const ALLOWED_TYPES = [
   "image/webp",
 ];
 
-export const CLOUDINARY_UPLOAD_URL = import.meta.env.VITE_CLOUDINARY_UPLOAD_URL;
-export const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-export const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
-
-export const BASE_URL = import.meta.env.VITE_API_URL;
 export const ACCESS_TOKEN_KEY = import.meta.env.VITE_ACCESS_TOKEN_KEY;
 export const REFRESH_TOKEN_KEY = import.meta.env.VITE_REFRESH_TOKEN_KEY;
-
 export const REFRESH_TOKEN_URL = `${BASE_URL}/refresh-token`;
-
-export const CLOUDINARY_UPLOAD_PRESET = import.meta.env
-  .VITE_CLOUDINARY_UPLOAD_PRESET;
+export const CLOUDINARY_UPLOAD_URL = import.meta.env.VITE_CLOUDINARY_UPLOAD_URL;
+export const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+export const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;

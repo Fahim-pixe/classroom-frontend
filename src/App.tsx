@@ -72,6 +72,10 @@ import AssignmentsShow from "./pages/assignments/show";
 import AttendanceList from "./pages/attendance/list";
 import AttendanceCreate from "./pages/attendance/create";
 
+import GradebookPage from "./pages/gradebook";
+
+import SavedResourcesPage from "./pages/resources/favorites";
+
 function App() {
   return (
     <BrowserRouter>
@@ -162,9 +166,10 @@ function App() {
                     <Route path="confirm" element={<EnrollmentConfirm />} />
                   </Route>
                   <Route path="resources" element={<Resources />} />
+                  <Route path="resources/favorites" element={<SavedResourcesPage />} />
                   <Route path="availability" element={<ModulePlaceholder title="Faculty Availability" description="Faculty availability and scheduling tools will appear here." />} />
                   <Route path="students" element={<ModulePlaceholder title="Student Directory" description="The student directory will provide searchable student profiles and enrollment context." />} />
-                  <Route path="academic-records" element={<ModulePlaceholder title="Academic Records" description="Academic records will provide a protected view of student progress and history." />} />
+                  <Route path="academic-records" element={<GradebookPage />} />
                   <Route path="attendance">
                     <Route index element={<AttendanceList />} />
                     <Route path="create" element={<AttendanceCreate />} />
