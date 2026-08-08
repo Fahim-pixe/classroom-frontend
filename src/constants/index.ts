@@ -33,19 +33,70 @@ export const API_ENDPOINTS = {
 
 export const ROUTES = {
   HOME: "/",
+  LOGIN: "/login",
+  REGISTER: "/register",
+  PROFILE: "/profile",
   SUBJECTS: {
     LIST: "/subjects",
     CREATE: "/subjects/create",
+    EDIT: "/subjects/edit/:id",
+    SHOW: "/subjects/show/:id",
   },
   CLASSES: {
     LIST: "/classes",
     CREATE: "/classes/create",
+    EDIT: "/classes/edit/:id",
+    SHOW: "/classes/show/:id",
   },
-  USERS: "/users",
+  DEPARTMENTS: {
+    LIST: "/departments",
+    CREATE: "/departments/create",
+    EDIT: "/departments/edit/:id",
+    SHOW: "/departments/show/:id",
+  },
+  USERS: {
+    LIST: "/users",
+    SHOW: "/users/show/:id",
+  },
+  ENROLLMENTS: {
+    CREATE: "/enrollments/create",
+    JOIN: "/enrollments/join",
+    CONFIRM: "/enrollments/confirm",
+  },
   ASSIGNMENTS: {
     LIST: "/assignments",
+    CREATE: "/assignments/create",
+    SHOW: "/assignments/show/:id",
+    LEARNING: "/learning/assignments",
   },
-};
+  RESOURCES: {
+    LIST: "/resources",
+    FAVORITES: "/resources/favorites",
+  },
+  ATTENDANCE: {
+    LIST: "/attendance",
+    CREATE: "/attendance/create",
+  },
+  ACADEMIC_RECORDS: "/academic-records",
+  AVAILABILITY: "/availability",
+  STUDENTS: "/students",
+  ANNOUNCEMENTS: "/announcements",
+  ADMIN_USERS: "/admin/users",
+  ROLES_PERMISSIONS: "/roles-permissions",
+  SETTINGS: "/settings",
+} as const;
+
+export const UI_TOKENS = {
+  motion: {
+    fast: "var(--motion-duration-fast)",
+    standard: "var(--motion-duration-standard)",
+  },
+  icon: {
+    inline: "var(--icon-size-inline)",
+    button: "var(--icon-size-button)",
+    navigation: "var(--icon-size-navigation)",
+  },
+} as const;
 
 export const DEPARTMENTS = [
   "Computer Science",

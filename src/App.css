@@ -66,6 +66,12 @@
   --shadow-2xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.25);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+  --motion-duration-fast: 150ms;
+  --motion-duration-standard: 200ms;
+  --icon-size-inline: 1rem;
+  --icon-size-button: 1rem;
+  --icon-size-navigation: 1.125rem;
+  --blur-overlay: 8px;
 }
 
 .dark {
@@ -175,6 +181,15 @@
 }
 
 @layer components {
+  [data-slot="button"] {
+    transition-duration: var(--motion-duration-standard);
+  }
+
+  [data-slot="button"] svg:not([class*="size-"]) {
+    width: var(--icon-size-button);
+    height: var(--icon-size-button);
+  }
+
   .page-title {
     @apply text-3xl font-bold text-foreground tracking-tight;
   }

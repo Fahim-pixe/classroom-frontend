@@ -22,6 +22,7 @@ import { Layout } from "./components/refine-ui/layout/layout";
 import { useNotificationProvider } from "./components/refine-ui/notification/use-notification-provider";
 import { Toaster } from "./components/refine-ui/notification/toaster";
 import { ThemeProvider } from "./components/refine-ui/theme/theme-provider";
+import { ROUTES } from "./constants";
 import "./App.css";
 
 // Icons
@@ -93,28 +94,28 @@ function App() {
                 projectId: "oQXqvS-Zw4CAo-QWHyYk",
               }}
               resources={[
-                { name: "dashboard", list: "/", meta: { label: "Dashboard", icon: <Home /> } },
+                { name: "dashboard", list: ROUTES.HOME, meta: { label: "Dashboard", icon: <Home /> } },
                 { name: "academic", meta: { label: "Academic", group: true } },
-                { name: "departments", list: "/departments", create: "/departments/create", edit: "/departments/edit/:id", show: "/departments/show/:id", meta: { label: "Departments", icon: <Building2 />, parent: "academic" } },
-                { name: "subjects", list: "/subjects", create: "/subjects/create", edit: "/subjects/edit/:id", show: "/subjects/show/:id", meta: { label: "Subjects", icon: <BookOpen />, parent: "academic" } },
-                { name: "classes", list: "/classes", create: "/classes/create", edit: "/classes/edit/:id", show: "/classes/show/:id", meta: { label: "Classes", icon: <GraduationCap />, parent: "academic" } },
+                { name: "departments", list: ROUTES.DEPARTMENTS.LIST, create: ROUTES.DEPARTMENTS.CREATE, edit: ROUTES.DEPARTMENTS.EDIT, show: ROUTES.DEPARTMENTS.SHOW, meta: { label: "Departments", icon: <Building2 />, parent: "academic" } },
+                { name: "subjects", list: ROUTES.SUBJECTS.LIST, create: ROUTES.SUBJECTS.CREATE, edit: ROUTES.SUBJECTS.EDIT, show: ROUTES.SUBJECTS.SHOW, meta: { label: "Subjects", icon: <BookOpen />, parent: "academic" } },
+                { name: "classes", list: ROUTES.CLASSES.LIST, create: ROUTES.CLASSES.CREATE, edit: ROUTES.CLASSES.EDIT, show: ROUTES.CLASSES.SHOW, meta: { label: "Classes", icon: <GraduationCap />, parent: "academic" } },
                 { name: "faculty", meta: { label: "Faculty", group: true } },
-                { name: "faculty-members", list: "/users", show: "/users/show/:id", meta: { label: "Faculty Members", icon: <Users />, parent: "faculty" } },
-                { name: "assignments", list: "/assignments", meta: { label: "Assignments", icon: <ClipboardList />, parent: "faculty" } },
-                { name: "availability", list: "/availability", meta: { label: "Availability", icon: <Clock3 />, parent: "faculty" } },
+                { name: "faculty-members", list: ROUTES.USERS.LIST, show: ROUTES.USERS.SHOW, meta: { label: "Faculty Members", icon: <Users />, parent: "faculty" } },
+                { name: "assignments", list: ROUTES.ASSIGNMENTS.LIST, meta: { label: "Assignments", icon: <ClipboardList />, parent: "faculty" } },
+                { name: "availability", list: ROUTES.AVAILABILITY, meta: { label: "Availability", icon: <Clock3 />, parent: "faculty" } },
                 { name: "students", meta: { label: "Students", group: true } },
-                { name: "student-directory", list: "/students", meta: { label: "Student Directory", icon: <UserRound />, parent: "students" } },
-                { name: "enrollments", list: "/enrollments/create", meta: { label: "Enrollments", icon: <ClipboardList />, parent: "students" } },
-                { name: "academic-records", list: "/academic-records", meta: { label: "Academic Records", icon: <FileText />, parent: "students" } },
+                { name: "student-directory", list: ROUTES.STUDENTS, meta: { label: "Student Directory", icon: <UserRound />, parent: "students" } },
+                { name: "enrollments", list: ROUTES.ENROLLMENTS.CREATE, meta: { label: "Enrollments", icon: <ClipboardList />, parent: "students" } },
+                { name: "academic-records", list: ROUTES.ACADEMIC_RECORDS, meta: { label: "Academic Records", icon: <FileText />, parent: "students" } },
                 { name: "learning", meta: { label: "Learning", group: true } },
-                { name: "resources", list: "/resources", meta: { label: "Resources & Materials", icon: <FolderOpen />, parent: "learning" } },
-                { name: "learning-assignments", list: "/learning/assignments", meta: { label: "Assignments", icon: <ClipboardCheck />, parent: "learning" } },
-                { name: "attendance", list: "/attendance", meta: { label: "Attendance", icon: <CalendarCheck />, parent: "learning" } },
-                { name: "announcements", list: "/announcements", meta: { label: "Announcements", icon: <Megaphone />, parent: "learning" } },
+                { name: "resources", list: ROUTES.RESOURCES.LIST, meta: { label: "Resources & Materials", icon: <FolderOpen />, parent: "learning" } },
+                { name: "learning-assignments", list: ROUTES.ASSIGNMENTS.LEARNING, meta: { label: "Assignments", icon: <ClipboardCheck />, parent: "learning" } },
+                { name: "attendance", list: ROUTES.ATTENDANCE.LIST, meta: { label: "Attendance", icon: <CalendarCheck />, parent: "learning" } },
+                { name: "announcements", list: ROUTES.ANNOUNCEMENTS, meta: { label: "Announcements", icon: <Megaphone />, parent: "learning" } },
                 { name: "administration", meta: { label: "Administration", group: true } },
-                { name: "admin-users", list: "/admin/users", meta: { label: "Users", icon: <Users />, parent: "administration" } },
-                { name: "roles-permissions", list: "/roles-permissions", meta: { label: "Roles & Permissions", icon: <ShieldCheck />, parent: "administration" } },
-                { name: "settings", list: "/settings", meta: { label: "Settings", icon: <Settings />, parent: "administration" } },
+                { name: "admin-users", list: ROUTES.ADMIN_USERS, meta: { label: "Users", icon: <Users />, parent: "administration" } },
+                { name: "roles-permissions", list: ROUTES.ROLES_PERMISSIONS, meta: { label: "Roles & Permissions", icon: <ShieldCheck />, parent: "administration" } },
+                { name: "settings", list: ROUTES.SETTINGS, meta: { label: "Settings", icon: <Settings />, parent: "administration" } },
               ]}
             >
               <Routes>
@@ -131,31 +132,31 @@ function App() {
                     </Authenticated>
                   }
                 >
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="profile" element={<Profile />} />
+                  <Route path={ROUTES.HOME} element={<Dashboard />} />
+                  <Route path={ROUTES.PROFILE.slice(1)} element={<Profile />} />
 
-                  <Route path="subjects">
+                  <Route path={ROUTES.SUBJECTS.LIST.slice(1)}>
                     <Route index element={<SubjectsList />} />
                     <Route path="create" element={<SubjectsCreate />} />
                     <Route path="edit/:id" element={<SubjectsEdit />} /> {/* <-- ADD THIS */}
                     <Route path="show/:id" element={<SubjectsShow />} />
                   </Route>
 
-                  <Route path="classes">
+                  <Route path={ROUTES.CLASSES.LIST.slice(1)}>
                     <Route index element={<ClassesList />} />
                     <Route path="create" element={<ClassesCreate />} />
                     <Route path="edit/:id" element={<ClassesEdit />} /> {/* <-- ADD THIS */}
                     <Route path="show/:id" element={<ClassesShow />} />
                   </Route>
 
-                  <Route path="departments">
+                  <Route path={ROUTES.DEPARTMENTS.LIST.slice(1)}>
                     <Route index element={<DepartmentsList />} />
                     <Route path="create" element={<DepartmentsCreate />} />
                     <Route path="edit/:id" element={<DepartmentsEdit />} /> {/* <-- ADD THIS */}
                     <Route path="show/:id" element={<DepartmentShow />} />
                   </Route>
 
-                  <Route path="users">
+                  <Route path={ROUTES.USERS.LIST.slice(1)}>
                     <Route index element={<FacultyList />} />
                     <Route path="show/:id" element={<FacultyShow />} />
                   </Route>
@@ -165,25 +166,25 @@ function App() {
                     <Route path="join" element={<EnrollmentsJoin />} />
                     <Route path="confirm" element={<EnrollmentConfirm />} />
                   </Route>
-                  <Route path="resources" element={<Resources />} />
-                  <Route path="resources/favorites" element={<SavedResourcesPage />} />
-                  <Route path="availability" element={<ModulePlaceholder title="Faculty Availability" description="Faculty availability and scheduling tools will appear here." />} />
-                  <Route path="students" element={<ModulePlaceholder title="Student Directory" description="The student directory will provide searchable student profiles and enrollment context." />} />
-                  <Route path="academic-records" element={<GradebookPage />} />
-                  <Route path="attendance">
+                  <Route path={ROUTES.RESOURCES.LIST.slice(1)} element={<Resources />} />
+                  <Route path={ROUTES.RESOURCES.FAVORITES.slice(1)} element={<SavedResourcesPage />} />
+                  <Route path={ROUTES.AVAILABILITY.slice(1)} element={<ModulePlaceholder title="Faculty Availability" description="Faculty availability and scheduling tools will appear here." />} />
+                  <Route path={ROUTES.STUDENTS.slice(1)} element={<ModulePlaceholder title="Student Directory" description="The student directory will provide searchable student profiles and enrollment context." />} />
+                  <Route path={ROUTES.ACADEMIC_RECORDS.slice(1)} element={<GradebookPage />} />
+                  <Route path={ROUTES.ATTENDANCE.LIST.slice(1)}>
                     <Route index element={<AttendanceList />} />
                     <Route path="create" element={<AttendanceCreate />} />
                   </Route>
-                  <Route path="announcements" element={<ModulePlaceholder title="Announcements" description="Announcements will centralize updates for classes, faculty, and students." />} />
-                  <Route path="admin/users" element={<ModulePlaceholder title="Users" description="User administration is reserved for authorized administrators." />} />
-                  <Route path="roles-permissions" element={<ModulePlaceholder title="Roles & Permissions" description="Role and permission management is reserved for authorized administrators." />} />
-                  <Route path="settings" element={<ModulePlaceholder title="Settings" description="Application settings will be available here for authorized administrators." />} />
-                  <Route path="assignments">
+                  <Route path={ROUTES.ANNOUNCEMENTS.slice(1)} element={<ModulePlaceholder title="Announcements" description="Announcements will centralize updates for classes, faculty, and students." />} />
+                  <Route path={ROUTES.ADMIN_USERS.slice(1)} element={<ModulePlaceholder title="Users" description="User administration is reserved for authorized administrators." />} />
+                  <Route path={ROUTES.ROLES_PERMISSIONS.slice(1)} element={<ModulePlaceholder title="Roles & Permissions" description="Role and permission management is reserved for authorized administrators." />} />
+                  <Route path={ROUTES.SETTINGS.slice(1)} element={<ModulePlaceholder title="Settings" description="Application settings will be available here for authorized administrators." />} />
+                  <Route path={ROUTES.ASSIGNMENTS.LIST.slice(1)}>
                     <Route path="" element={<AssignmentsList />} />
                     <Route path="create" element={<AssignmentsCreate />} />
                     <Route path="show/:id" element={<AssignmentsShow />} />
                   </Route>
-                  <Route path="learning/assignments" element={<AssignmentsList />} />
+                  <Route path={ROUTES.ASSIGNMENTS.LEARNING.slice(1)} element={<AssignmentsList />} />
                 </Route>
 
                 {/* 2. PUBLIC AUTH ROUTES */}

@@ -257,7 +257,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
               ))}
             </div>
             <Button variant="outline" className="mt-6 h-11 w-full rounded-xl" asChild>
-              <Link to={ROUTES.USERS}>View full report</Link>
+              <Link to={ROUTES.USERS.LIST}>View full report</Link>
             </Button>
           </CardContent>
         </Card>
