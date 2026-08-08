@@ -49,15 +49,17 @@ const AssignmentsShow = () => {
     const isGrading = gradeMutation.isPending;
 
   const handleStudentSubmit = () => {
-    let finalContent = submissionText;
-    if (submissionFile) finalContent += `\n\nAttached File: ${submissionFile.url}`;
-
-    if (!finalContent.trim()) return notify?.({ type: "error", message: "Submission cannot be empty." });
+    const finalContent = submissionText.trim();
+    if (!finalContent) return notify?.({ type: "error", message: "Submission cannot be empty." });
 
     submitWork({
       url: `assignments/${id}/submissions`,
       method: "post",
-      values: { content: finalContent }
+      values: {
+        content: finalContent,
+        attachmentUrl: submissionFile?.url,
+        attachmentName: submissionFile?.url.split("/").pop(),
+      }
     }, {
       onSuccess: () => {
         notify?.({ type: "success", message: "Assignment submitted successfully!" });
@@ -110,6 +112,7 @@ const AssignmentsShow = () => {
                     {mySubmission.grade !== null ? `Graded: ${mySubmission.grade}/${assignment?.maxPoints}` : "Submitted - Pending Review"}
                   </Badge>
                   <p className="text-sm whitespace-pre-wrap">{mySubmission.content}</p>
+                  {mySubmission.attachmentUrl && <a href={mySubmission.attachmentUrl} target="_blank" rel="noreferrer" className="text-sm text-primary underline">Open attached file</a>}
                   {mySubmission.feedback && (
                     <div className="mt-4 p-3 bg-primary/10 rounded-md border border-primary/20">
                       <p className="text-xs font-semibold text-primary">Instructor Feedback:</p>
@@ -165,6 +168,7 @@ const AssignmentsShow = () => {
                           <DialogHeader><DialogTitle>Grade Submission: {sub.student.name}</DialogTitle></DialogHeader>
                           <div className="p-3 bg-muted/50 rounded-md border text-sm whitespace-pre-wrap max-h-50 overflow-y-auto mb-4">
                             {sub.content}
+                            {sub.attachmentUrl && <a href={sub.attachmentUrl} target="_blank" rel="noreferrer" className="mt-3 block text-primary underline">Open attached file</a>}
                           </div>
                           <div className="space-y-4">
                             <div>

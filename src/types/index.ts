@@ -129,6 +129,10 @@ export type Assignment = {
   description: string;
   dueAt?: string | null;
   maxPoints: number;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
+  attachmentMimeType?: string | null;
+  attachmentSizeBytes?: number | null;
   createdAt?: string;
   updatedAt?: string;
   className?: string;
@@ -139,6 +143,10 @@ export type Submission = {
   assignmentId: number;
   studentId: string;
   content: string;
+  attachmentUrl?: string | null;
+  attachmentName?: string | null;
+  attachmentMimeType?: string | null;
+  attachmentSizeBytes?: number | null;
   submittedAt: string;
   grade?: number | null;
   feedback?: string | null;
