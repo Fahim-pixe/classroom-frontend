@@ -66,6 +66,7 @@ import EnrollmentConfirm from "./pages/enrollments/confirm";
 import ModulePlaceholder from "./pages/module-placeholder";
 import Resources from "./pages/resources";
 import AnnouncementsPage from "./pages/announcements";
+import StudentsPage from "./pages/students";
 
 import AssignmentsList from "./pages/assignments/list";
 import AssignmentsCreate from "./pages/assignments/create";
@@ -170,7 +171,7 @@ function App() {
                   <Route path={ROUTES.RESOURCES.LIST.slice(1)} element={<Resources />} />
                   <Route path={ROUTES.RESOURCES.FAVORITES.slice(1)} element={<SavedResourcesPage />} />
                   <Route path={ROUTES.AVAILABILITY.slice(1)} element={<ModulePlaceholder title="Faculty Availability" description="Faculty availability and scheduling tools will appear here." />} />
-                  <Route path={ROUTES.STUDENTS.slice(1)} element={<ModulePlaceholder title="Student Directory" description="The student directory will provide searchable student profiles and enrollment context." />} />
+                  <Route path={ROUTES.STUDENTS.slice(1)} element={<StudentsPage />} />
                   <Route path={ROUTES.ACADEMIC_RECORDS.slice(1)} element={<GradebookPage />} />
                   <Route path={ROUTES.ATTENDANCE.LIST.slice(1)}>
                     <Route index element={<AttendanceList />} />
