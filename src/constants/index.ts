@@ -32,6 +32,20 @@ export const API_ENDPOINTS = {
   RESOURCE_UPLOAD_SIGNATURE: "/resources/upload-signature",
 };
 
+export const ROLE_PERMISSION_GROUPS = [
+  { label: "Academic", permissions: ["View departments", "Manage subjects", "Manage classes"] },
+  { label: "Faculty", permissions: ["View faculty", "Manage assignments", "View availability"] },
+  { label: "Students", permissions: ["View student directory", "Manage enrollments", "View academic records"] },
+  { label: "Learning", permissions: ["Manage resources", "Manage assignments", "Manage attendance", "Publish announcements"] },
+  { label: "Administration", permissions: ["Manage users", "Manage roles and permissions", "Manage settings"] },
+] as const;
+
+export const ROLE_PERMISSION_MATRIX = {
+  admin: { label: "Administrator", grantedGroups: ROLE_PERMISSION_GROUPS.map((group) => group.label) },
+  teacher: { label: "Teacher", grantedGroups: ["Academic", "Faculty", "Students", "Learning"] },
+  student: { label: "Student", grantedGroups: ["Academic", "Students", "Learning"] },
+} as const;
+
 export const ROUTES = {
   HOME: "/",
   LOGIN: "/login",

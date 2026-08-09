@@ -69,6 +69,7 @@ import AnnouncementsPage from "./pages/announcements";
 import StudentsPage from "./pages/students";
 import AvailabilityPage from "./pages/availability";
 import AdminUsersPage from "./pages/admin-users";
+import RolesPermissionsPage from "./pages/roles-permissions";
 
 import AssignmentsList from "./pages/assignments/list";
 import AssignmentsCreate from "./pages/assignments/create";
@@ -181,7 +182,7 @@ function App() {
                   </Route>
                   <Route path={ROUTES.ANNOUNCEMENTS.slice(1)} element={<AnnouncementsPage />} />
                   <Route path={ROUTES.ADMIN_USERS.slice(1)} element={<AdminUsersPage />} />
-                  <Route path={ROUTES.ROLES_PERMISSIONS.slice(1)} element={<ModulePlaceholder title="Roles & Permissions" description="Role and permission management is reserved for authorized administrators." />} />
+                  <Route path={ROUTES.ROLES_PERMISSIONS.slice(1)} element={<RolesPermissionsPage />} />
                   <Route path={ROUTES.SETTINGS.slice(1)} element={<ModulePlaceholder title="Settings" description="Application settings will be available here for authorized administrators." />} />
                   <Route path={ROUTES.ASSIGNMENTS.LIST.slice(1)}>
                     <Route path="" element={<AssignmentsList />} />
