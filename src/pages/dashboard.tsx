@@ -175,13 +175,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
     ? charts.usersByRole.map((entry) => ({ name: String(entry.role || "Other").replace(/^./, (letter: string) => letter.toUpperCase()), value: toNumber(entry.total) }))
     : [];
 
-  const donutData = roleRows.length > 0 && roleRows.some((entry) => entry.value > 0)
-    ? roleRows.filter((entry) => entry.value > 0)
-    : [
-        { name: "Students", value: Math.max(toNumber(overview.users) - toNumber(overview.teachers) - toNumber(overview.admins), 1) },
-        { name: "Teachers", value: Math.max(toNumber(overview.teachers), 1) },
-        { name: "Admins", value: Math.max(toNumber(overview.admins), 1) },
-      ];
+  const donutData = roleRows.filter((entry) => entry.value > 0);
 
   const monthlyData = Array.isArray(dashboard.enrollmentTrend)
     ? dashboard.enrollmentTrend.map((entry: EnrollmentTrendEntry) => ({ month: entry.month, current: toNumber(entry.totalStudents ?? entry.newEnrollments), average: toNumber(entry.newEnrollments) }))
@@ -238,16 +232,20 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
           </CardHeader>
           <CardContent className="px-8 pb-6 pt-4">
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={donutData} dataKey="value" nameKey="name" innerRadius={68} outerRadius={102} paddingAngle={2} strokeWidth={0}>
-                    {donutData.map((_, index) => <Cell key={`donut-cell-${index}`} fill={`var(--chart-${(index % 5) + 1})`} />)}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => [value, "Users"]} contentStyle={{ backgroundColor: "var(--popover)", borderColor: "var(--border)", color: "var(--popover-foreground)" }} />
-                </PieChart>
-              </ResponsiveContainer>
+              {donutData.length === 0 ? (
+                <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">No distribution data is available yet.</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={donutData} dataKey="value" nameKey="name" innerRadius={68} outerRadius={102} paddingAngle={2} strokeWidth={0}>
+                      {donutData.map((_, index) => <Cell key={`donut-cell-${index}`} fill={`var(--chart-${(index % 5) + 1})`} />)}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => [value, "Students"]} contentStyle={{ backgroundColor: "var(--popover)", borderColor: "var(--border)", color: "var(--popover-foreground)" }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-5">
+            {donutData.length > 0 && <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-5">
               {donutData.map((entry, index) => (
                 <div key={entry.name} className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span className="h-3 w-3 rounded-full" style={{ backgroundColor: `var(--chart-${(index % 5) + 1})` }} />
@@ -255,7 +253,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
                   <Badge variant="secondary" className="ml-auto font-medium">{entry.value}</Badge>
                 </div>
               ))}
-            </div>
+            </div>}
             <Button variant="outline" className="mt-6 h-11 w-full rounded-xl" asChild>
               <Link to={ROUTES.USERS.LIST}>View full report</Link>
             </Button>
@@ -280,8 +278,8 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} allowDecimals={false} />
                   <Tooltip contentStyle={{ backgroundColor: "var(--popover)", borderColor: "var(--border)", color: "var(--popover-foreground)" }} />
-                  <Line type="monotone" dataKey="current" stroke="hsl(var(--primary))" strokeWidth={3} dot={false} activeDot={{ r: 5 }} />
-                  <Line type="monotone" dataKey="average" stroke="hsl(var(--primary) / 0.4)" strokeWidth={3} dot={false} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="current" stroke="var(--primary)" strokeWidth={3} dot={false} activeDot={{ r: 5 }} />
+                  <Line type="monotone" dataKey="average" stroke="var(--chart-2)" strokeWidth={3} dot={false} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -333,7 +331,7 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
       <section className="flex flex-col justify-between gap-6 pt-2 md:flex-row md:items-start">
         <div>
           <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">Good morning, {firstName} 👋</h1>
-          <p className="mt-2 text-lg text-muted-foreground">Fall 2026 • Computer Science Academic Command Center</p>
+          <p className="mt-2 text-lg text-muted-foreground">Your academic command center for classes, deadlines, and announcements.</p>
         </div>
         <Button className="h-12 rounded-xl px-5 text-base shadow-sm" asChild>
           <Link to={ROUTES.CLASSES.LIST}><Plus className="mr-2 h-5 w-5" /> Join class</Link>
@@ -363,13 +361,13 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
             ) : (
               <div className="space-y-4">
                 {schedule.map((item: ScheduleItem) => {
-                  const startTime = item.schedules?.[0]?.startTime || "09:00 AM";
-                  const day = item.schedules?.[0]?.day || "Today";
+                  const startTime = item.schedules?.[0]?.startTime;
+                  const day = item.schedules?.[0]?.day;
                   return (
                     <div key={item.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50">
                       <div className="flex items-center gap-4">
                         <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs uppercase">
-                          <span>{day.slice(0, 3)}</span>
+                          <span>{day ? day.slice(0, 3) : "—"}</span>
                         </div>
                         <div>
                           <p className="font-semibold text-foreground text-base">{item.subjectName || item.name}</p>
@@ -377,7 +375,7 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
                         </div>
                       </div>
                       <Badge variant="secondary" className="font-medium text-sm px-3 py-1">
-                        {startTime}
+                        {startTime || "Time pending"}
                       </Badge>
                     </div>
                   );
