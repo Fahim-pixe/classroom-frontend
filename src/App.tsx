@@ -67,6 +67,7 @@ import ModulePlaceholder from "./pages/module-placeholder";
 import Resources from "./pages/resources";
 import AnnouncementsPage from "./pages/announcements";
 import StudentsPage from "./pages/students";
+import AvailabilityPage from "./pages/availability";
 
 import AssignmentsList from "./pages/assignments/list";
 import AssignmentsCreate from "./pages/assignments/create";
@@ -170,7 +171,7 @@ function App() {
                   </Route>
                   <Route path={ROUTES.RESOURCES.LIST.slice(1)} element={<Resources />} />
                   <Route path={ROUTES.RESOURCES.FAVORITES.slice(1)} element={<SavedResourcesPage />} />
-                  <Route path={ROUTES.AVAILABILITY.slice(1)} element={<ModulePlaceholder title="Faculty Availability" description="Faculty availability and scheduling tools will appear here." />} />
+                  <Route path={ROUTES.AVAILABILITY.slice(1)} element={<AvailabilityPage />} />
                   <Route path={ROUTES.STUDENTS.slice(1)} element={<StudentsPage />} />
                   <Route path={ROUTES.ACADEMIC_RECORDS.slice(1)} element={<GradebookPage />} />
                   <Route path={ROUTES.ATTENDANCE.LIST.slice(1)}>
