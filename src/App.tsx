@@ -65,6 +65,7 @@ import EnrollmentsJoin from "./pages/enrollments/join";
 import EnrollmentConfirm from "./pages/enrollments/confirm";
 import ModulePlaceholder from "./pages/module-placeholder";
 import Resources from "./pages/resources";
+import AnnouncementsPage from "./pages/announcements";
 
 import AssignmentsList from "./pages/assignments/list";
 import AssignmentsCreate from "./pages/assignments/create";
@@ -175,7 +176,7 @@ function App() {
                     <Route index element={<AttendanceList />} />
                     <Route path="create" element={<AttendanceCreate />} />
                   </Route>
-                  <Route path={ROUTES.ANNOUNCEMENTS.slice(1)} element={<ModulePlaceholder title="Announcements" description="Announcements will centralize updates for classes, faculty, and students." />} />
+                  <Route path={ROUTES.ANNOUNCEMENTS.slice(1)} element={<AnnouncementsPage />} />
                   <Route path={ROUTES.ADMIN_USERS.slice(1)} element={<ModulePlaceholder title="Users" description="User administration is reserved for authorized administrators." />} />
                   <Route path={ROUTES.ROLES_PERMISSIONS.slice(1)} element={<ModulePlaceholder title="Roles & Permissions" description="Role and permission management is reserved for authorized administrators." />} />
                   <Route path={ROUTES.SETTINGS.slice(1)} element={<ModulePlaceholder title="Settings" description="Application settings will be available here for authorized administrators." />} />
