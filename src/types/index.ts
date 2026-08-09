@@ -136,6 +136,17 @@ export type Assignment = {
   createdAt?: string;
   updatedAt?: string;
   className?: string;
+  submission?: {
+    id: number;
+    content: string;
+    attachmentUrl?: string | null;
+    attachmentName?: string | null;
+    attachmentMimeType?: string | null;
+    attachmentSizeBytes?: number | null;
+    submittedAt?: string | null;
+    grade?: number | null;
+    feedback?: string | null;
+  } | null;
 };
 
 export type Submission = {
