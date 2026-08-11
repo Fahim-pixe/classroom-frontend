@@ -333,9 +333,14 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
           <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">Good morning, {firstName} 👋</h1>
           <p className="mt-2 text-lg text-muted-foreground">Your academic command center for classes, deadlines, and announcements.</p>
         </div>
-        <Button className="h-12 rounded-xl px-5 text-base shadow-sm" asChild>
-          <Link to={ROUTES.CLASSES.LIST}><Plus className="mr-2 h-5 w-5" /> Join class</Link>
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" className="h-12 rounded-xl px-5 text-base shadow-sm" asChild>
+            <Link to={ROUTES.MY_WEEK}>My week</Link>
+          </Button>
+          <Button className="h-12 rounded-xl px-5 text-base shadow-sm" asChild>
+            <Link to={ROUTES.CLASSES.LIST}><Plus className="mr-2 h-5 w-5" /> Join class</Link>
+          </Button>
+        </div>
       </section>
 
       {isError && <div className="rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">Some personal dashboard data could not be loaded.</div>}
@@ -350,8 +355,8 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
       <section className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-border">
-            <CardTitle className="text-xl">My Week &amp; Today&apos;s Schedule</CardTitle>
-            <Badge variant="outline" className="text-xs">Live Sync</Badge>
+            <CardTitle className="text-xl">Today&apos;s schedule</CardTitle>
+            <Badge variant="outline" className="text-xs">Current day</Badge>
           </CardHeader>
           <CardContent className="pt-6">
             {schedule.length === 0 ? (
@@ -403,14 +408,23 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
                   return (
                     <div key={item.id} className="relative pl-6 border-l-2 border-primary/40 space-y-1 pb-4 last:pb-0">
                       <div className="absolute -left-1.75 top-1 h-3 w-3 rounded-full bg-primary" />
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-3">
                         <p className="font-semibold text-foreground text-sm">{item.title}</p>
-                        {isSoon && <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">Due Soon</Badge>}
+                        {item.submission?.submittedAt ? (
+                          <Badge variant="secondary">Submitted</Badge>
+                        ) : isSoon ? (
+                          <Badge variant="destructive">Due soon</Badge>
+                        ) : (
+                          <Badge variant="outline">Pending</Badge>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground">{item.className}</p>
                       <p className="text-xs font-medium text-primary mt-1">
                         {dueDate ? `Due: ${dueDate.toLocaleString()}` : "No strict due date"}
                       </p>
+                      <Link to={ROUTES.ASSIGNMENTS.SHOW.replace(":id", String(item.id))} className="inline-block text-xs font-medium text-primary underline-offset-4 hover:underline">
+                        Open assignment
+                      </Link>
                     </div>
                   );
                 })}
