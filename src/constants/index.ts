@@ -30,6 +30,11 @@ export const BASE_URL = import.meta.env.VITE_API_URL;
 export const API_ENDPOINTS = {
   DASHBOARD_STATS: "/stats/dashboard",
   MY_WEEK: "/calendar/my-week",
+  ACADEMIC_RECORDS: {
+    LIST: "/gradebook",
+    CLASSES: "/gradebook/classes",
+    SUMMARY: "/gradebook/summary",
+  },
   RESOURCE_UPLOAD_SIGNATURE: "/resources/upload-signature",
 };
 

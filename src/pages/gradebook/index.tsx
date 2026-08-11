@@ -1,148 +1,209 @@
-import { useGetIdentity, useList } from "@refinedev/core";
-import { useState, useMemo } from "react";
-import { Award, BookOpen, CheckCircle, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMemo, useState } from "react";
+import { useCustom, useGetIdentity } from "@refinedev/core";
+import { Award, BookOpen, Users } from "lucide-react";
+
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { ListView } from "@/components/refine-ui/views/list-view";
-import type { ClassDetails, GradebookEntry, User } from "@/types";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { API_ENDPOINTS } from "@/constants";
+import type { GradebookEntry, User } from "@/types";
+
+type AcademicClass = {
+  id: number;
+  name: string;
+  subjectCode: string;
+  subjectName: string;
+};
+
+type AcademicMetrics = {
+  evaluationCount: number;
+  gradedStudents: number;
+  earnedPoints: number;
+  possiblePoints: number;
+  percentage: number | null;
+};
+
+type AcademicSummary = {
+  class: AcademicClass;
+  metrics: AcademicMetrics;
+};
+
+type AcademicClassesPayload = {
+  data?: AcademicClass[];
+};
+
+type AcademicSummaryPayload = AcademicSummary & {
+  data?: AcademicSummary;
+};
+
+type GradebookPayload = {
+  data?: GradebookEntry[];
+};
+
+type CustomQueryResponse<T> = {
+  data: T | undefined;
+  isLoading: boolean;
+  isError: boolean;
+};
 
 const GradebookPage = () => {
   const { data: currentUser } = useGetIdentity<User>();
   const isStudent = currentUser?.role === "student";
+  const { data: classesResponse, isLoading: classesLoading, isError: classesError } = useCustom({
+    url: API_ENDPOINTS.ACADEMIC_RECORDS.CLASSES,
+    method: "get",
+    queryOptions: { retry: 1 },
+  }) as unknown as CustomQueryResponse<AcademicClassesPayload>;
 
-  // Fetch classes for filtering
-  const { query: classesQuery } = useList<ClassDetails>({
-    resource: "classes",
-    pagination: { mode: "off" }
-  });
-  const classes = classesQuery.data?.data || [];
-
+  const availableClasses = useMemo(() => {
+    const classesPayload = classesResponse?.data as AcademicClassesPayload | AcademicClass[] | undefined;
+    return Array.isArray(classesPayload) ? classesPayload : classesPayload?.data ?? [];
+  }, [classesResponse?.data]);
   const [selectedClassId, setSelectedClassId] = useState<string>("");
-  const activeClassId = selectedClassId || (classes.length > 0 ? String(classes[0].id) : "");
+  const activeClassId = selectedClassId || (availableClasses[0] ? String(availableClasses[0].id) : "");
 
-  // Fetch gradebook entries matching the class
-  const { query: gradebookQuery } = useList<GradebookEntry>({
-    resource: "gradebook",
-    filters: activeClassId ? [{ field: "classId", operator: "eq", value: activeClassId }] : [],
-    pagination: { mode: "off" },
-    queryOptions: { enabled: !!activeClassId }
-  });
+  const { data: summaryResponse, isLoading: summaryLoading, isError: summaryError } = useCustom({
+    url: API_ENDPOINTS.ACADEMIC_RECORDS.SUMMARY,
+    method: "get",
+    config: { query: { classId: activeClassId } },
+    queryOptions: { enabled: Boolean(activeClassId), retry: 1 },
+  }) as unknown as CustomQueryResponse<AcademicSummaryPayload>;
 
-  const entries = useMemo(() => gradebookQuery.data?.data || [], [gradebookQuery.data?.data]);
+  const { data: entriesResponse, isLoading: entriesLoading, isError: entriesError } = useCustom({
+    url: API_ENDPOINTS.ACADEMIC_RECORDS.LIST,
+    method: "get",
+    config: { query: { classId: activeClassId } },
+    queryOptions: { enabled: Boolean(activeClassId), retry: 1 },
+  }) as unknown as CustomQueryResponse<GradebookPayload>;
 
-  // Calculate Student Metrics dynamically from actual entries
-  const stats = useMemo(() => {
-    if (!entries.length) return { earned: 0, total: 0, percentage: 0 };
-    const earned = entries.reduce((acc, curr) => acc + curr.points, 0);
-    const total = entries.reduce((acc, curr) => acc + curr.maxPoints, 0);
-    const percentage = total > 0 ? Math.round((earned / total) * 100) : 0;
-    return { earned, total, percentage };
-  }, [entries]);
+  const summaryPayload = summaryResponse?.data as AcademicSummaryPayload | AcademicSummary | undefined;
+  const summary = summaryPayload && "data" in summaryPayload
+    ? summaryPayload.data
+    : summaryPayload;
+  const entriesPayload = entriesResponse?.data as GradebookPayload | GradebookEntry[] | undefined;
+  const entries = Array.isArray(entriesPayload)
+    ? entriesPayload
+    : entriesPayload?.data ?? [];
+  const selectedClass = summary?.class ?? availableClasses.find((item) => String(item.id) === activeClassId);
+  const scoreLabel = summary?.metrics.percentage === null || summary?.metrics.percentage === undefined
+    ? "Not available"
+    : `${summary.metrics.percentage}%`;
 
   return (
     <ListView>
       <Breadcrumb />
-      <h1 className="page-title">Academic Progress & Grades</h1>
-      <div className="intro-row">
+      <section className="space-y-2">
+        <h1 className="page-title">Academic Records</h1>
         <p className="text-muted-foreground">
-          {isStudent ? "Track your semester GPA, subject performance, and assignment evaluations." : "Manage and review student grades across your classes."}
+          {isStudent
+            ? "Review only the evaluations published for your enrolled classes."
+            : "Review class-level evaluation records for the classes you are authorized to manage."}
         </p>
-        <div className="actions-row">
-          <Select value={activeClassId} onValueChange={setSelectedClassId}>
-            <SelectTrigger className="w-70">
-              <SelectValue placeholder="Select a class" />
-            </SelectTrigger>
-            <SelectContent>
-              {classes.map((cls) => (
-                <SelectItem key={cls.id} value={String(cls.id)}>{cls.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      </section>
 
-      {isStudent && (
-        <div className="grid gap-5 py-6 sm:grid-cols-3">
-          <Card className="shadow-sm">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Current Standing</p>
-                <p className="text-3xl font-semibold text-foreground mt-2">{stats.percentage}%</p>
-                <p className="text-xs text-muted-foreground mt-1">{stats.earned} / {stats.total} total points</p>
-              </div>
-              <Award className="h-8 w-8 text-primary" />
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Semester GPA (Est.)</p>
-                <p className="text-3xl font-semibold text-foreground mt-2">3.72</p>
-                <p className="text-xs text-emerald-500 mt-1 flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3" /> +0.14 vs last term
+      <section className="mt-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div className="space-y-1">
+          <p className="text-muted-foreground">Class record</p>
+          {selectedClass ? (
+            <p className="text-foreground">{selectedClass.subjectCode} · {selectedClass.name}</p>
+          ) : null}
+        </div>
+        <Select value={activeClassId} onValueChange={setSelectedClassId} disabled={classesLoading || availableClasses.length === 0}>
+          <SelectTrigger aria-label="Select an academic record">
+            <SelectValue placeholder="Select a class" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableClasses.map((classRecord) => (
+              <SelectItem key={classRecord.id} value={String(classRecord.id)}>
+                {classRecord.subjectCode} · {classRecord.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </section>
+
+      {classesLoading ? (
+        <Card className="mt-6"><CardContent className="p-6 text-muted-foreground">Loading available academic records…</CardContent></Card>
+      ) : classesError ? (
+        <Card className="mt-6"><CardContent className="p-6 text-destructive">Academic Records could not be loaded. Please refresh and try again.</CardContent></Card>
+      ) : availableClasses.length === 0 ? (
+        <Card className="mt-6"><CardContent className="p-6 text-muted-foreground">No academic records are available for your account yet.</CardContent></Card>
+      ) : (
+        <>
+          <section className="mt-6 grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex-row items-center justify-between space-y-0">
+                <CardTitle>{isStudent ? "Current standing" : "Average recorded score"}</CardTitle>
+                <Award aria-hidden="true" className="h-[var(--icon-size-button)] w-[var(--icon-size-button)] text-primary" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-foreground">{summaryLoading ? "Loading…" : scoreLabel}</p>
+                <Progress value={summary?.metrics.percentage ?? 0} aria-label="Recorded score percentage" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex-row items-center justify-between space-y-0">
+                <CardTitle>Published evaluations</CardTitle>
+                <BookOpen aria-hidden="true" className="h-[var(--icon-size-button)] w-[var(--icon-size-button)] text-primary" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-foreground">{summaryLoading ? "Loading…" : summary?.metrics.evaluationCount ?? 0}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex-row items-center justify-between space-y-0">
+                <CardTitle>{isStudent ? "Points recorded" : "Students evaluated"}</CardTitle>
+                <Users aria-hidden="true" className="h-[var(--icon-size-button)] w-[var(--icon-size-button)] text-primary" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-foreground">
+                  {summaryLoading
+                    ? "Loading…"
+                    : isStudent
+                      ? `${summary?.metrics.earnedPoints ?? 0} / ${summary?.metrics.possiblePoints ?? 0}`
+                      : summary?.metrics.gradedStudents ?? 0}
                 </p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-primary" />
-            </CardContent>
-          </Card>
-          <Card className="shadow-sm">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Credits Completed</p>
-                <p className="text-3xl font-semibold text-foreground mt-2">84 / 120</p>
-                <p className="text-xs text-muted-foreground mt-1">70% Degree Progress</p>
-              </div>
-              <BookOpen className="h-8 w-8 text-primary" />
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              </CardContent>
+            </Card>
+          </section>
 
-      <div className="mt-6">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>Recorded Evaluations</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!activeClassId ? (
-              <div className="p-10 text-center text-muted-foreground border border-dashed border-border rounded-xl">
-                Please select a class to view academic records.
-              </div>
-            ) : gradebookQuery.isLoading ? (
-              <div className="p-10 text-center text-muted-foreground animate-pulse">Loading gradebook entries...</div>
-            ) : entries.length === 0 ? (
-              <div className="p-10 text-center text-muted-foreground border border-dashed border-border rounded-xl">
-                No grades have been published for this class yet.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {entries.map((entry) => (
-                  <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border bg-card">
-                    <div>
-                      <p className="font-semibold text-foreground">{entry.title}</p>
-                      {!isStudent && entry.student && (
-                        <p className="text-xs text-muted-foreground mt-0.5">Student: {entry.student.name} ({entry.student.email})</p>
-                      )}
-                      {entry.feedback && (
-                        <p className="text-sm text-muted-foreground mt-2 bg-muted/50 p-2.5 rounded-md border border-border">
-                          <span className="font-medium text-foreground">Instructor Feedback:</span> {entry.feedback}
-                        </p>
-                      )}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Recorded evaluations</CardTitle>
+              {selectedClass ? <p className="text-muted-foreground">{selectedClass.subjectName}</p> : null}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {summaryError || entriesError ? (
+                <p className="text-destructive">This academic record could not be loaded. Please refresh and try again.</p>
+              ) : summaryLoading || entriesLoading ? (
+                <p className="text-muted-foreground">Loading recorded evaluations…</p>
+              ) : entries.length === 0 ? (
+                <p className="text-muted-foreground">No evaluations have been published for this class yet.</p>
+              ) : (
+                entries.map((entry) => (
+                  <article key={entry.id} className="border-l-2 border-primary pl-4">
+                    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                      <div className="space-y-1">
+                        <p className="text-foreground">{entry.title}</p>
+                        {!isStudent && entry.student ? (
+                          <p className="text-muted-foreground">Student: {entry.student.name}</p>
+                        ) : null}
+                      </div>
+                      <Badge variant="secondary">{entry.points} / {entry.maxPoints} points</Badge>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="text-base px-3 py-1 font-semibold">
-                        {entry.points} / {entry.maxPoints} pts
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                    {entry.feedback ? (
+                      <p className="mt-3 text-muted-foreground">Instructor feedback: {entry.feedback}</p>
+                    ) : null}
+                  </article>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
     </ListView>
   );
 };
