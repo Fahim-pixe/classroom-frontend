@@ -1,8 +1,29 @@
-import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from "@/constants";
 import { FileText, Trash, UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { UploadWidgetProps, UploadWidgetValue } from "@/types";
+import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET, CLOUDINARY_WIDGET_CONFIG, PERFORMANCE_CONFIG } from "@/constants";
+
+function loadCloudinaryWidget() {
+  if (window.cloudinary) return Promise.resolve();
+
+  return new Promise<void>((resolve, reject) => {
+    const existingScript = document.getElementById(CLOUDINARY_WIDGET_CONFIG.scriptElementId) as HTMLScriptElement | null;
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(), { once: true });
+      existingScript.addEventListener("error", () => reject(new Error(PERFORMANCE_CONFIG.cloudinaryWidgetErrorLabel)), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = CLOUDINARY_WIDGET_CONFIG.scriptElementId;
+    script.src = CLOUDINARY_WIDGET_CONFIG.scriptUrl;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(PERFORMANCE_CONFIG.cloudinaryWidgetErrorLabel));
+    document.body.appendChild(script);
+  });
+}
 
 function UploadWidget({
   value = null,
@@ -14,6 +35,8 @@ function UploadWidget({
   const [preview, setPreview] = useState<UploadWidgetValue | null>(value);
   const [deleteToken, setDeleteToken] = useState<string | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [isWidgetLoading, setIsWidgetLoading] = useState(true);
+  const [widgetError, setWidgetError] = useState("");
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -37,8 +60,8 @@ function UploadWidget({
           cloudName: CLOUDINARY_CLOUD_NAME,
           uploadPreset: CLOUDINARY_UPLOAD_PRESET,
           multiple: false,
-          folder: "uploads",
-          maxFileSize: 10_000_000,
+          folder: CLOUDINARY_WIDGET_CONFIG.uploadFolder,
+          maxFileSize: CLOUDINARY_WIDGET_CONFIG.maxFileSizeBytes,
           // Removed clientAllowedFormats restriction to allow all document types
           // Allowed formats can be configured in your Cloudinary Preset settings
         },
@@ -57,16 +80,25 @@ function UploadWidget({
       return true;
     };
 
-    if (initializeWidget()) return;
-    const intervalId = window.setInterval(() => {
-      if (initializeWidget()) window.clearInterval(intervalId);
-    }, 500);
+    let isActive = true;
+    loadCloudinaryWidget()
+      .then(() => {
+        if (isActive) initializeWidget();
+      })
+      .catch(() => {
+        if (isActive) setWidgetError(PERFORMANCE_CONFIG.cloudinaryWidgetErrorLabel);
+      })
+      .finally(() => {
+        if (isActive) setIsWidgetLoading(false);
+      });
 
-    return () => window.clearInterval(intervalId);
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   const openWidget = () => {
-    if (!disabled) widgetRef.current?.open();
+    if (!disabled && !isWidgetLoading) widgetRef.current?.open();
   };
 
   const removeFromCloudinary = async () => {
@@ -113,12 +145,12 @@ function UploadWidget({
           </Button>
         </div>
       ) : (
-        <div role="button" tabIndex={0} onClick={openWidget} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openWidget(); } }} className="upload-dropzone min-h-40 w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-md border-2 border-dashed border-border bg-muted/20 mt-3 transition-colors hover:bg-muted/50 hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-70">
+        <div role="button" tabIndex={disabled || isWidgetLoading ? -1 : 0} aria-disabled={disabled || isWidgetLoading} onClick={openWidget} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openWidget(); } }} className="upload-dropzone min-h-40 w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-md border-2 border-dashed border-border bg-muted/20 mt-3 transition-colors hover:bg-muted/50 hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-70">
           <div className="upload-prompt flex flex-col items-center justify-center gap-3 p-6 text-center">
             <UploadCloud className="icon size-10 text-primary" />
             <div>
-              <p className="text-sm font-bold text-foreground">Click to upload file</p>
-              <p className="text-xs text-muted-foreground mt-1">Images, PDFs, Word, ZIP up to 10MB</p>
+              <p className="text-sm font-bold text-foreground">{isWidgetLoading ? PERFORMANCE_CONFIG.cloudinaryWidgetLoadingLabel : "Click to upload file"}</p>
+              <p className="text-xs text-muted-foreground mt-1">{widgetError || "Images, PDFs, Word, ZIP up to 10MB"}</p>
             </div>
           </div>
         </div>

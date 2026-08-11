@@ -93,7 +93,8 @@
   },
   "scripts": {
     "dev": "refine dev",
-    "build": "tsc && refine build",
+    "build": "tsc && refine build && node scripts/check-performance-budget.mjs",
+    "perf:check": "tsc && refine build && node scripts/check-performance-budget.mjs",
     "start": "refine start",
     "refine": "refine",
     "test": "vitest run"

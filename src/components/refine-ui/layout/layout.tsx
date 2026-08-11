@@ -3,8 +3,10 @@
 import { Header } from "@/components/refine-ui/layout/header";
 import { ThemeProvider } from "@/components/refine-ui/theme/theme-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { PERFORMANCE_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";
-import type { PropsWithChildren } from "react";
+import { Suspense, type PropsWithChildren } from "react";
+import { PageLoadingFallback } from "./page-loading-fallback";
 import { Sidebar } from "./sidebar";
 
 export function Layout({ children }: PropsWithChildren) {
@@ -31,7 +33,9 @@ export function Layout({ children }: PropsWithChildren) {
               "lg:pt-6"
             )}
           >
-            {children}
+            <Suspense fallback={<PageLoadingFallback label={PERFORMANCE_CONFIG.routeLoadingLabel} />}>
+              {children}
+            </Suspense>
           </main>
         </SidebarInset>
       </SidebarProvider>

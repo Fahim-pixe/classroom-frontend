@@ -2,8 +2,8 @@ import {
   Refine,
   Authenticated,
 } from "@refinedev/core";
-import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
+import { lazy, Suspense, type PropsWithChildren } from "react";
 import { BrowserRouter, Route, Routes, Outlet } from "react-router";
 import routerProvider, {
   NavigateToResource,
@@ -22,74 +22,78 @@ import { Layout } from "./components/refine-ui/layout/layout";
 import { useNotificationProvider } from "./components/refine-ui/notification/use-notification-provider";
 import { Toaster } from "./components/refine-ui/notification/toaster";
 import { ThemeProvider } from "./components/refine-ui/theme/theme-provider";
-import { ROUTES } from "./constants";
+import { PERFORMANCE_CONFIG, ROUTES } from "./constants";
+import { PageLoadingFallback } from "./components/refine-ui/layout/page-loading-fallback";
 import "./App.css";
 
 // Icons
 import { BookOpen, GraduationCap, Home, Building2, Users, ClipboardList, Clock3, UserRound, ShieldCheck, Settings, FolderOpen, Megaphone, ClipboardCheck, FileText, CalendarCheck } from "lucide-react";
 
-// Auth Pages
-import { Login } from "./pages/login";
-import { Register } from "./pages/register";
-// import { ForgotPassword } from "./pages/forgot-password"; // Uncomment if you add this file back
+// Pages are loaded on demand to keep the initial authenticated bundle focused on the active route.
+const Login = lazy(() => import("./pages/login").then(({ Login: Page }) => ({ default: Page })));
+const Register = lazy(() => import("./pages/register").then(({ Register: Page }) => ({ default: Page })));
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const Profile = lazy(() => import("@/pages/profile"));
+const SubjectsList = lazy(() => import("./pages/subjects/list"));
+const SubjectsCreate = lazy(() => import("./pages/subjects/create"));
+const SubjectsEdit = lazy(() => import("./pages/subjects/edit"));
+const SubjectsShow = lazy(() => import("./pages/subjects/show"));
+const ClassesList = lazy(() => import("./pages/classes/list"));
+const ClassesCreate = lazy(() => import("./pages/classes/create"));
+const ClassesEdit = lazy(() => import("./pages/classes/edit"));
+const ClassesShow = lazy(() => import("./pages/classes/show"));
+const DepartmentsList = lazy(() => import("./pages/departments/list"));
+const DepartmentsCreate = lazy(() => import("./pages/departments/create"));
+const DepartmentsEdit = lazy(() => import("./pages/departments/edit"));
+const DepartmentShow = lazy(() => import("./pages/departments/show"));
+const FacultyList = lazy(() => import("./pages/faculty/list"));
+const FacultyShow = lazy(() => import("./pages/faculty/show"));
+const EnrollmentsCreate = lazy(() => import("./pages/enrollments/create"));
+const EnrollmentsJoin = lazy(() => import("./pages/enrollments/join"));
+const EnrollmentConfirm = lazy(() => import("./pages/enrollments/confirm"));
+const Resources = lazy(() => import("./pages/resources"));
+const AnnouncementsPage = lazy(() => import("./pages/announcements"));
+const StudentsPage = lazy(() => import("./pages/students"));
+const AvailabilityPage = lazy(() => import("./pages/availability"));
+const AdminUsersPage = lazy(() => import("./pages/admin-users"));
+const RolesPermissionsPage = lazy(() => import("./pages/roles-permissions"));
+const SettingsPage = lazy(() => import("./pages/settings"));
+const MyWeekPage = lazy(() => import("./pages/my-week"));
+const AssignmentsList = lazy(() => import("./pages/assignments/list"));
+const AssignmentsCreate = lazy(() => import("./pages/assignments/create"));
+const AssignmentsShow = lazy(() => import("./pages/assignments/show"));
+const AttendanceList = lazy(() => import("./pages/attendance/list"));
+const AttendanceCreate = lazy(() => import("./pages/attendance/create"));
+const GradebookPage = lazy(() => import("./pages/gradebook"));
+const SavedResourcesPage = lazy(() => import("./pages/resources/favorites"));
 
-// Dashboard
-import Dashboard from "@/pages/dashboard";
-import Profile from "@/pages/profile";
+const DevelopmentTools = import.meta.env.DEV
+  ? lazy(() =>
+      import("@refinedev/devtools").then(({ DevtoolsPanel, DevtoolsProvider }) => ({
+        default: ({ children }: PropsWithChildren) => (
+          <DevtoolsProvider>
+            {children}
+            <DevtoolsPanel />
+          </DevtoolsProvider>
+        ),
+      })),
+    )
+  : null;
 
-// Subjects
-import SubjectsList from "./pages/subjects/list";
-import SubjectsCreate from "./pages/subjects/create";
-import SubjectsEdit from "./pages/subjects/edit";
-import SubjectsShow from "./pages/subjects/show";
+function ToolingBoundary({ children }: PropsWithChildren) {
+  if (!DevelopmentTools) {
+    return children;
+  }
 
-// Classes
-import ClassesList from "./pages/classes/list";
-import ClassesCreate from "./pages/classes/create";
-import ClassesEdit from "./pages/classes/edit";
-import ClassesShow from "./pages/classes/show";
-
-// Departments
-import DepartmentsList from "./pages/departments/list";
-import DepartmentsCreate from "./pages/departments/create";
-import DepartmentsEdit from "./pages/departments/edit";
-import DepartmentShow from "./pages/departments/show";
-
-// Faculty (Users)
-import FacultyList from "./pages/faculty/list";
-import FacultyShow from "./pages/faculty/show";
-
-// Enrollments
-import EnrollmentsCreate from "./pages/enrollments/create";
-import EnrollmentsJoin from "./pages/enrollments/join";
-import EnrollmentConfirm from "./pages/enrollments/confirm";
-import ModulePlaceholder from "./pages/module-placeholder";
-import Resources from "./pages/resources";
-import AnnouncementsPage from "./pages/announcements";
-import StudentsPage from "./pages/students";
-import AvailabilityPage from "./pages/availability";
-import AdminUsersPage from "./pages/admin-users";
-import RolesPermissionsPage from "./pages/roles-permissions";
-import SettingsPage from "./pages/settings";
-import MyWeekPage from "./pages/my-week";
-
-import AssignmentsList from "./pages/assignments/list";
-import AssignmentsCreate from "./pages/assignments/create";
-import AssignmentsShow from "./pages/assignments/show";
-
-import AttendanceList from "./pages/attendance/list";
-import AttendanceCreate from "./pages/attendance/create";
-
-import GradebookPage from "./pages/gradebook";
-
-import SavedResourcesPage from "./pages/resources/favorites";
+  return <Suspense fallback={children}><DevelopmentTools>{children}</DevelopmentTools></Suspense>;
+}
 
 function App() {
   return (
     <BrowserRouter>
       <RefineKbarProvider>
         <ThemeProvider>
-          <DevtoolsProvider>
+          <ToolingBoundary>
             <Refine
               dataProvider={dataProvider}
               authProvider={authProvider} // <-- Injected Auth Provider
@@ -99,6 +103,16 @@ function App() {
                 syncWithLocation: true,
                 warnWhenUnsavedChanges: true,
                 projectId: "oQXqvS-Zw4CAo-QWHyYk",
+                reactQuery: {
+                  clientConfig: {
+                    defaultOptions: {
+                      queries: {
+                        staleTime: PERFORMANCE_CONFIG.queryStaleTimeMs,
+                        gcTime: PERFORMANCE_CONFIG.queryGarbageCollectionTimeMs,
+                      },
+                    },
+                  },
+                },
               }}
               resources={[
                 { name: "dashboard", list: ROUTES.HOME, meta: { label: "Dashboard", icon: <Home /> } },
@@ -125,7 +139,8 @@ function App() {
                 { name: "settings", list: ROUTES.SETTINGS, meta: { label: "Settings", icon: <Settings />, parent: "administration" } },
               ]}
             >
-              <Routes>
+              <Suspense fallback={<PageLoadingFallback label={PERFORMANCE_CONFIG.routeLoadingLabel} />}>
+                <Routes>
                 {/* 1. PROTECTED ROUTES */}
                 <Route
                   element={
@@ -226,15 +241,15 @@ function App() {
                 >
                   <Route path="*" element={<ErrorComponent />} />
                 </Route>
-              </Routes>
+                </Routes>
+              </Suspense>
 
               <Toaster />
               <RefineKbar />
               <UnsavedChangesNotifier />
               <DocumentTitleHandler />
             </Refine>
-            <DevtoolsPanel />
-          </DevtoolsProvider>
+          </ToolingBoundary>
         </ThemeProvider>
       </RefineKbarProvider>
     </BrowserRouter>

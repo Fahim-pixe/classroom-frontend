@@ -122,6 +122,23 @@ export const ATTENDANCE_STATUS = {
   excused: { label: "Excused", badgeClass: "text-secondary-foreground bg-secondary border-border" },
 } as const;
 
+export const PERFORMANCE_CONFIG = {
+  routeLoadingLabel: "Loading page content",
+  resourceSearchDebounceMs: 300,
+  resourcePageSize: 24,
+  queryStaleTimeMs: 15_000,
+  queryGarbageCollectionTimeMs: 300_000,
+  cloudinaryWidgetLoadingLabel: "Preparing secure upload",
+  cloudinaryWidgetErrorLabel: "Upload service is temporarily unavailable",
+} as const;
+
+export const CLOUDINARY_WIDGET_CONFIG = {
+  scriptElementId: "cloudinary-upload-widget-script",
+  scriptUrl: "https://upload-widget.cloudinary.com/latest/global/all.js",
+  uploadFolder: "uploads",
+  maxFileSizeBytes: 10_000_000,
+} as const;
+
 export const UI_TOKENS = {
   motion: {
     fast: "var(--motion-duration-fast)",
