@@ -57,6 +57,7 @@ export const API_ENDPOINTS = {
     LIST: "/gradebook",
     CLASSES: "/gradebook/classes",
     SUMMARY: "/gradebook/summary",
+    CLASS_USERS: (classId: string | number) => `/classes/${classId}/users`,
   },
   ATTENDANCE: {
     LIST: "/attendance",
@@ -180,6 +181,7 @@ export const ROUTES = {
     CREATE: "/attendance/create",
   },
   ACADEMIC_RECORDS: "/academic-records",
+  GRADE_ASSESSMENTS: "/grades-assessments",
   AVAILABILITY: "/availability",
   STUDENTS: "/students",
   ANNOUNCEMENTS: "/announcements",
@@ -255,7 +257,7 @@ export const NAVIGATION_CONFIG = {
       items: [
         { id: "assignments", label: "Assignments", route: ROUTES.ASSIGNMENTS.LIST, icon: ClipboardCheck, roles: STAFF_ROLES, activeRoutes: [ROUTES.ASSIGNMENTS.LIST, ROUTES.ASSIGNMENTS.LEARNING] },
         { id: "attendance", label: "Attendance", route: ROUTES.ATTENDANCE.LIST, icon: CalendarDays, roles: STAFF_ROLES },
-        { id: "grades-assessments", label: "Grades & Assessments", route: ROUTES.ACADEMIC_RECORDS, icon: FileText, roles: [USER_ROLES.TEACHER] },
+        { id: "grades-assessments", label: "Grades & Assessments", route: ROUTES.GRADE_ASSESSMENTS, icon: FileText, roles: STAFF_ROLES },
         { id: "resources", label: "Resources & Materials", route: ROUTES.RESOURCES.LIST, icon: FolderOpen, roles: STAFF_ROLES },
       ],
     },

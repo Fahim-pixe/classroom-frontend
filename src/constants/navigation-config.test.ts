@@ -59,6 +59,19 @@ describe("NAVIGATION_CONFIG", () => {
     expect(academicRecordItems.map((item) => item.label)).toEqual(["Academic Records"]);
   });
 
+  it("keeps distinct grade management and academic records destinations for administrators", () => {
+    const administratorItems = NAVIGATION_CONFIG.groups.reduce<NavigationItemConfig[]>(
+      (items, group) => items.concat(group.items),
+      [],
+    ).filter((item) => item.roles.includes(USER_ROLES.ADMIN));
+    const assessmentManagement = administratorItems.find((item) => item.id === "grades-assessments");
+    const academicRecords = administratorItems.find((item) => item.id === "academic-records");
+
+    expect(assessmentManagement?.route).toBe(ROUTES.GRADE_ASSESSMENTS);
+    expect(academicRecords?.route).toBe(ROUTES.ACADEMIC_RECORDS);
+    expect(assessmentManagement?.route).not.toBe(academicRecords?.route);
+  });
+
   it("keeps availability out of global navigation", () => {
     const allLabels = NAVIGATION_CONFIG.groups.flatMap((group) =>
       group.items.map((item) => item.label),

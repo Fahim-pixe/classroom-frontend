@@ -65,6 +65,7 @@ const AssignmentsShow = lazy(() => import("./pages/assignments/show"));
 const AttendanceList = lazy(() => import("./pages/attendance/list"));
 const AttendanceCreate = lazy(() => import("./pages/attendance/create"));
 const GradebookPage = lazy(() => import("./pages/gradebook"));
+const GradeAssessmentsPage = lazy(() => import("./pages/gradebook/manage"));
 const SavedResourcesPage = lazy(() => import("./pages/resources/favorites"));
 
 const DevelopmentTools = import.meta.env.DEV
@@ -126,7 +127,8 @@ function App() {
                 { name: "teaching", meta: { label: "Teaching", group: true } },
                 { name: "assignments", list: ROUTES.ASSIGNMENTS.LIST, meta: { label: "Assignments", icon: <ClipboardList />, parent: "teaching" } },
                 { name: "attendance", list: ROUTES.ATTENDANCE.LIST, meta: { label: "Attendance", icon: <CalendarCheck />, parent: "teaching" } },
-                { name: "academic-records", list: ROUTES.ACADEMIC_RECORDS, meta: { label: "Grades & Assessments", icon: <FileText />, parent: "teaching" } },
+                { name: "grades-assessments", list: ROUTES.GRADE_ASSESSMENTS, meta: { label: "Grades & Assessments", icon: <FileText />, parent: "teaching" } },
+                { name: "academic-records", list: ROUTES.ACADEMIC_RECORDS, meta: { label: "Academic Records", icon: <FileText />, parent: "students" } },
                 { name: "resources", list: ROUTES.RESOURCES.LIST, meta: { label: "Resources & Materials", icon: <FolderOpen />, parent: "teaching" } },
                 { name: "students", meta: { label: "Students", group: true } },
                 { name: "student-directory", list: ROUTES.STUDENTS, meta: { label: "Student Directory", icon: <UserRound />, parent: "students" } },
@@ -192,6 +194,7 @@ function App() {
                   <Route path={ROUTES.RESOURCES.FAVORITES.slice(1)} element={<SavedResourcesPage />} />
                   <Route path={ROUTES.AVAILABILITY.slice(1)} element={<AvailabilityPage />} />
                   <Route path={ROUTES.STUDENTS.slice(1)} element={<StudentsPage />} />
+                  <Route path={ROUTES.GRADE_ASSESSMENTS.slice(1)} element={<GradeAssessmentsPage />} />
                   <Route path={ROUTES.ACADEMIC_RECORDS.slice(1)} element={<GradebookPage />} />
                   <Route path={ROUTES.ATTENDANCE.LIST.slice(1)}>
                     <Route index element={<AttendanceList />} />
