@@ -181,6 +181,13 @@ export type AttendanceSession = {
   teacherId: string;
   createdAt: string;
   records: AttendanceRecord[];
+  summary?: {
+    total: number;
+    present: number;
+    absent: number;
+    late: number;
+    excused: number;
+  };
 };
 
 export type GradebookEntry = {

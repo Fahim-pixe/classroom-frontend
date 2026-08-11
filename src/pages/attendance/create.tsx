@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useList, useCreate, useBack, useNotification } from "@refinedev/core";
+import { useList, useCreate, useBack, useCustom, useNotification } from "@refinedev/core";
 import { format } from "date-fns";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { CreateView } from "@/components/refine-ui/views/create-view";
@@ -10,9 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import type { ClassDetails, User } from "@/types";
+import { API_ENDPOINTS } from "@/constants";
+import type { User } from "@/types";
 
 type AttendanceMark = "present" | "absent" | "late" | "excused";
+type AttendanceClass = { id: number; name: string; subjectCode: string };
+type AttendanceClassesPayload = { data?: AttendanceClass[] };
+type CustomQueryResponse<T> = { data: T | undefined };
 
 const AttendanceCreate = () => {
   const back = useBack();
@@ -23,14 +27,16 @@ const AttendanceCreate = () => {
   const [sessionNotes, setSessionNotes] = useState<string>("");
   const [rosterMarks, setRosterMarks] = useState<Record<string, AttendanceMark>>({});
 
-  const { query: classesQuery } = useList<ClassDetails>({
-    resource: "classes",
-    pagination: { mode: "off" }
-  });
-  const classes = classesQuery.data?.data || [];
+  const { data: classesResponse } = useCustom({
+    url: API_ENDPOINTS.ATTENDANCE.CLASSES,
+    method: "get",
+    queryOptions: { retry: 1 },
+  }) as unknown as CustomQueryResponse<AttendanceClassesPayload>;
+  const classesPayload = classesResponse?.data as AttendanceClassesPayload | AttendanceClass[] | undefined;
+  const classes = Array.isArray(classesPayload) ? classesPayload : classesPayload?.data ?? [];
 
   const { query: rosterQuery } = useList<User>({
-    resource: selectedClassId ? `classes/${selectedClassId}/users` : "",
+    resource: selectedClassId ? API_ENDPOINTS.ATTENDANCE.CLASS_USERS(selectedClassId) : "",
     filters: [{ field: "role", operator: "eq", value: "student" }],
     pagination: { mode: "off" },
     queryOptions: { enabled: !!selectedClassId }
@@ -66,7 +72,7 @@ const AttendanceCreate = () => {
     }));
 
     createAttendance({
-      resource: "attendance/sessions",
+      resource: API_ENDPOINTS.ATTENDANCE.SESSIONS,
       values: {
         classId: Number(selectedClassId),
         sessionDate: new Date(sessionDate).toISOString(),

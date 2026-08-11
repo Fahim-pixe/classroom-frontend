@@ -35,6 +35,13 @@ export const API_ENDPOINTS = {
     CLASSES: "/gradebook/classes",
     SUMMARY: "/gradebook/summary",
   },
+  ATTENDANCE: {
+    LIST: "/attendance",
+    SESSIONS: "/attendance/sessions",
+    CLASSES: "/attendance/classes",
+    SUMMARY: "/attendance/summary",
+    CLASS_USERS: (classId: string | number) => `/classes/${classId}/users`,
+  },
   RESOURCE_UPLOAD_SIGNATURE: "/resources/upload-signature",
 };
 
@@ -106,6 +113,13 @@ export const ROUTES = {
   ROLES_PERMISSIONS: "/roles-permissions",
   SETTINGS: "/settings",
   MY_WEEK: "/my-week",
+} as const;
+
+export const ATTENDANCE_STATUS = {
+  present: { label: "Present", badgeClass: "text-primary bg-primary/10 border-primary/20" },
+  absent: { label: "Absent", badgeClass: "text-destructive bg-destructive/10 border-destructive/20" },
+  late: { label: "Late", badgeClass: "text-muted-foreground bg-muted border-border" },
+  excused: { label: "Excused", badgeClass: "text-secondary-foreground bg-secondary border-border" },
 } as const;
 
 export const UI_TOKENS = {
