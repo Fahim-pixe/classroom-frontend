@@ -29,6 +29,7 @@ export const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const API_ENDPOINTS = {
   DASHBOARD_STATS: "/stats/dashboard",
+  MY_WEEK: "/calendar/my-week",
   RESOURCE_UPLOAD_SIGNATURE: "/resources/upload-signature",
 };
 
@@ -99,6 +100,7 @@ export const ROUTES = {
   ADMIN_USERS: "/admin/users",
   ROLES_PERMISSIONS: "/roles-permissions",
   SETTINGS: "/settings",
+  MY_WEEK: "/my-week",
 } as const;
 
 export const UI_TOKENS = {

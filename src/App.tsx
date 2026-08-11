@@ -71,6 +71,7 @@ import AvailabilityPage from "./pages/availability";
 import AdminUsersPage from "./pages/admin-users";
 import RolesPermissionsPage from "./pages/roles-permissions";
 import SettingsPage from "./pages/settings";
+import MyWeekPage from "./pages/my-week";
 
 import AssignmentsList from "./pages/assignments/list";
 import AssignmentsCreate from "./pages/assignments/create";
@@ -185,6 +186,7 @@ function App() {
                   <Route path={ROUTES.ADMIN_USERS.slice(1)} element={<AdminUsersPage />} />
                   <Route path={ROUTES.ROLES_PERMISSIONS.slice(1)} element={<RolesPermissionsPage />} />
                   <Route path={ROUTES.SETTINGS.slice(1)} element={<SettingsPage />} />
+                  <Route path={ROUTES.MY_WEEK.slice(1)} element={<MyWeekPage />} />
                   <Route path={ROUTES.ASSIGNMENTS.LIST.slice(1)}>
                     <Route path="" element={<AssignmentsList />} />
                     <Route path="create" element={<AssignmentsCreate />} />
