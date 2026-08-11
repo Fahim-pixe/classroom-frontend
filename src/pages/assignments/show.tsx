@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import UploadWidget from "@/components/upload-widget";
+import { SubmissionAttachmentUploader } from "@/components/submission-attachment-uploader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNotificationProvider } from "@/components/refine-ui/notification/use-notification-provider";
-import { Assignment, Submission, UploadWidgetValue, User } from "@/types";
+import { Assignment, StorageUploadValue, Submission, User } from "@/types";
 
 const AssignmentsShow = () => {
   const { id } = useParams();
@@ -37,7 +37,7 @@ const AssignmentsShow = () => {
 
   // Form State
   const [submissionText, setSubmissionText] = useState("");
-  const [submissionFile, setSubmissionFile] = useState<UploadWidgetValue | null>(null);
+  const [submissionFile, setSubmissionFile] = useState<StorageUploadValue | null>(null);
 
   const [gradeInput, setGradeInput] = useState<number | "">("");
   const [feedbackInput, setFeedbackInput] = useState("");
@@ -57,8 +57,10 @@ const AssignmentsShow = () => {
       method: "post",
       values: {
         content: finalContent,
-        attachmentUrl: submissionFile?.url,
-        attachmentName: submissionFile?.url.split("/").pop(),
+        attachmentAssetId: submissionFile?.assetId,
+        attachmentName: submissionFile?.fileName,
+        attachmentMimeType: submissionFile?.mimeType,
+        attachmentSizeBytes: submissionFile?.fileSizeBytes,
       }
     }, {
       onSuccess: () => {
@@ -130,7 +132,15 @@ const AssignmentsShow = () => {
                   />
                   <div className="my-2">
                     <p className="text-sm font-medium mb-2">Attach Document (Optional)</p>
-                    <UploadWidget value={submissionFile} onChange={setSubmissionFile} />
+                    {assignment ? (
+                      <SubmissionAttachmentUploader
+                        assignmentId={assignment.id}
+                        classId={assignment.classId}
+                        value={submissionFile}
+                        onChange={setSubmissionFile}
+                        disabled={isSubmitting}
+                      />
+                    ) : null}
                   </div>
                   <Button onClick={handleStudentSubmit} disabled={isSubmitting} className="w-full">
                     {isSubmitting ? "Submitting..." : "Turn In Assignment"}

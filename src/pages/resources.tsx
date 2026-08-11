@@ -6,7 +6,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetIdentity } from "@refinedev/core";
-import { API_ENDPOINTS, BACKEND_BASE_URL, PERFORMANCE_CONFIG } from "@/constants";
+import { API_ENDPOINTS, BACKEND_BASE_URL, PERFORMANCE_CONFIG, STORAGE_CLIENT_CONFIG } from "@/constants";
 
 type Resource = {
   id: number;
@@ -17,6 +17,7 @@ type Resource = {
   description?: string | null;
   category: string;
   resourceUrl: string;
+  storageAssetId?: string | null;
   mimeType?: string | null;
   isFavorite?: boolean;
   lastViewedAt?: string | null;
@@ -103,28 +104,57 @@ export default function Resources() {
     event.preventDefault();
     setUploadError("");
     let finalResourceUrl = resourceUrl.trim();
+    let storageAssetId: string | undefined;
 
     try {
       if (selectedFile) {
-        const signatureResponse = await fetch(`${BACKEND_BASE_URL}${API_ENDPOINTS.RESOURCE_UPLOAD_SIGNATURE}`, { method: "POST", credentials: "include" });
-        const signaturePayload = await signatureResponse.json();
-        if (!signatureResponse.ok) throw new Error(signaturePayload.error || "Upload signing failed");
-        const signature = signaturePayload.data;
-        const uploadBody = new FormData();
-        uploadBody.append("file", selectedFile);
-        uploadBody.append("api_key", signature.apiKey);
-        uploadBody.append("timestamp", String(signature.timestamp));
-        uploadBody.append("folder", signature.folder);
-        uploadBody.append("signature", signature.signature);
-        const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${signature.cloudName}/${signature.resourceType}/upload`, { method: "POST", body: uploadBody });
-        const uploadPayload = await uploadResponse.json();
-        if (!uploadResponse.ok || !uploadPayload.secure_url) throw new Error(uploadPayload.error?.message || "Cloudinary upload failed");
-        finalResourceUrl = uploadPayload.secure_url;
+        if (!Number.isInteger(Number(classId)) || Number(classId) < 1) {
+          throw new Error("Select a class before uploading a resource");
+        }
+        if (!STORAGE_CLIENT_CONFIG.resourceUpload.allowedMimeTypes.includes(selectedFile.type as never)) {
+          throw new Error("This file type is not permitted for classroom resources");
+        }
+        if (selectedFile.size > STORAGE_CLIENT_CONFIG.resourceUpload.maximumBytes) {
+          throw new Error("This file exceeds the configured classroom resource size limit");
+        }
+
+        const intentResponse = await fetch(`${BACKEND_BASE_URL}${API_ENDPOINTS.STORAGE.UPLOAD_INTENTS}`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            assetKind: STORAGE_CLIENT_CONFIG.assetKinds.resource,
+            classId: Number(classId),
+            fileName: selectedFile.name,
+            mimeType: selectedFile.type,
+            fileSizeBytes: selectedFile.size,
+          }),
+        });
+        const intentPayload = await intentResponse.json();
+        if (!intentResponse.ok) throw new Error(intentPayload.error || "Upload authorization failed");
+
+        const intent = intentPayload.data;
+        const uploadResponse = await fetch(intent.signedUploadUrl, {
+          method: "PUT",
+          headers: intent.requiredHeaders,
+          body: selectedFile,
+        });
+        if (!uploadResponse.ok) throw new Error("Secure file upload failed");
+
+        const confirmationResponse = await fetch(`${BACKEND_BASE_URL}${API_ENDPOINTS.STORAGE.CONFIRM_UPLOAD_INTENT(intent.uploadIntentId)}`, {
+          method: "POST",
+          credentials: "include",
+        });
+        const confirmationPayload = await confirmationResponse.json();
+        if (!confirmationResponse.ok || !confirmationPayload.data?.id) {
+          throw new Error(confirmationPayload.error || "Uploaded file could not be verified");
+        }
+        storageAssetId = confirmationPayload.data.id;
       }
 
-      if (!finalResourceUrl) throw new Error("Add a resource URL or choose a document to upload");
+      if (!finalResourceUrl && !storageAssetId) throw new Error("Add a resource URL or choose a document to upload");
       createResource(
-        { resource: "resources", values: { classId: Number(classId), title, description, category: createCategory, resourceUrl: finalResourceUrl, mimeType: selectedFile?.type, fileSizeBytes: selectedFile?.size, isPublished: true } },
+        { resource: "resources", values: { classId: Number(classId), title, description, category: createCategory, resourceUrl: finalResourceUrl || undefined, storageAssetId, mimeType: selectedFile?.type, fileSizeBytes: selectedFile?.size, isPublished: true } },
         {
           onSuccess: () => {
             setShowCreate(false);
@@ -145,9 +175,25 @@ export default function Resources() {
     );
   };
 
-  const openResource = (resource: Resource) => {
-    window.open(resource.resourceUrl, "_blank", "noopener,noreferrer");
-    updateFavorite({ url: `resources/${resource.id}/view`, method: "post", values: {} });
+  const openResource = async (resource: Resource) => {
+    try {
+      const accessEndpoint = resource.storageAssetId
+        ? API_ENDPOINTS.STORAGE.ACCESS_ASSET(resource.storageAssetId)
+        : null;
+      if (accessEndpoint) {
+        const accessResponse = await fetch(`${BACKEND_BASE_URL}${accessEndpoint}`, { credentials: "include" });
+        const accessPayload = await accessResponse.json();
+        if (!accessResponse.ok || !accessPayload.data?.url) {
+          throw new Error(accessPayload.error || "Resource access could not be authorized");
+        }
+        window.open(accessPayload.data.url, "_blank", "noopener,noreferrer");
+      } else {
+        window.open(resource.resourceUrl, "_blank", "noopener,noreferrer");
+      }
+      updateFavorite({ url: `resources/${resource.id}/view`, method: "post", values: {} });
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Resource could not be opened");
+    }
   };
 
   return (
@@ -165,7 +211,7 @@ export default function Resources() {
         <select value={classId} onChange={(event) => setClassId(event.target.value)} required className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"><option value="">Select class</option>{classesData.map((item: any) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
         <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Title" required />
         <Input value={resourceUrl} onChange={(event) => setResourceUrl(event.target.value)} placeholder="File or link URL (optional when uploading)" type="url" required={!selectedFile} />
-        <Input type="file" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} accept="application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,image/*,video/*" />
+        <Input type="file" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} accept={STORAGE_CLIENT_CONFIG.resourceUpload.allowedMimeTypes.join(",")} />
         <select value={createCategory} onChange={(event) => setCreateCategory(event.target.value)} className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm">{Object.entries(categoryLabels).filter(([key]) => key !== "all").map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
         <Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Short description (optional)" className="md:col-span-2" />
         {uploadError && <p className="text-sm text-destructive md:col-span-2">{uploadError}</p>}

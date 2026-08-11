@@ -50,14 +50,20 @@ export const classSchema = z.object({
     })
     .min(1, "Capacity must be at least 1"),
   status: z.enum(["active", "inactive"]),
-  bannerUrl: z
-    .string({ required_error: "Class banner is required" })
-    .min(1, "Class banner is required"),
-  bannerCldPubId: z
-    .string({ required_error: "Banner reference is required" })
-    .min(1, "Banner reference is required"),
+  bannerUrl: z.string().optional(),
+  bannerCldPubId: z.string().optional(),
+  bannerAssetId: z.string().uuid().optional(),
   inviteCode: z.string().optional(),
   schedules: z.array(scheduleSchema).optional(),
+}).superRefine((value, context) => {
+  const hasLegacyBanner = Boolean(value.bannerUrl && value.bannerCldPubId);
+  if (!value.bannerAssetId && !hasLegacyBanner) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["bannerAssetId"],
+      message: "Class banner is required",
+    });
+  }
 });
 
 export const enrollmentSchema = z.object({

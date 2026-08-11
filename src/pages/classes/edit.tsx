@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useBack, useList } from "@refinedev/core";
 import { Loader2 } from "lucide-react";
 import { classSchema } from "@/lib/schema";
-import UploadWidget from "@/components/upload-widget";
+import { ClassBannerUploader } from "@/components/class-banner-uploader";
 import type { Subject, User } from "@/types";
 import * as z from "zod";
 
@@ -46,6 +46,7 @@ const ClassesEdit = () => {
   } = form;
 
   const bannerPublicId = form.watch("bannerCldPubId");
+  const bannerAssetId = form.watch("bannerAssetId");
 
   const onSubmit = async (values: z.infer<typeof classSchema>) => {
     try {
@@ -104,16 +105,20 @@ const ClassesEdit = () => {
                     <FormItem>
                       <FormLabel>Banner Image <span className="text-orange-600">*</span></FormLabel>
                       <FormControl>
-                        <UploadWidget
+                        <ClassBannerUploader
                           value={
                             field.value
-                              ? { url: field.value, publicId: bannerPublicId ?? "" }
+                              ? { url: field.value, publicId: bannerPublicId ?? "", assetId: bannerAssetId }
                               : null
                           }
                           onChange={(file) => {
                             if (file) {
                               field.onChange(file.url);
-                              form.setValue("bannerCldPubId", file.publicId, {
+                              form.setValue("bannerCldPubId", file.publicId ?? "", {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+                              form.setValue("bannerAssetId", file.assetId, {
                                 shouldValidate: true,
                                 shouldDirty: true,
                               });
@@ -123,14 +128,18 @@ const ClassesEdit = () => {
                                 shouldValidate: true,
                                 shouldDirty: true,
                               });
+                              form.setValue("bannerAssetId", undefined, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
                             }
                           }}
                         />
                       </FormControl>
                       <FormMessage />
-                      {errors.bannerCldPubId && !errors.bannerUrl && (
+                      {errors.bannerAssetId && (
                         <p className="text-destructive text-sm">
-                          {errors.bannerCldPubId.message?.toString()}
+                          {errors.bannerAssetId.message?.toString()}
                         </p>
                       )}
                     </FormItem>

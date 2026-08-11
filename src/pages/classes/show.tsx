@@ -1,4 +1,3 @@
-import { AdvancedImage } from "@cloudinary/react";
 import {
   useCreate,
   useGetIdentity,
@@ -23,7 +22,6 @@ import { Input } from "@/components/ui/input";
 import { useNotificationProvider } from "@/components/refine-ui/notification/use-notification-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { bannerPhoto } from "@/lib/cloudinary";
 import { ClassDetails } from "@/types";
 
 type ClassUser = {
@@ -324,22 +322,11 @@ const ClassesShow = () => {
 
       <div className="banner">
         {classDetails.bannerUrl ? (
-          classDetails.bannerUrl.includes("res.cloudinary.com") &&
-          classDetails.bannerCldPubId ? (
-            <AdvancedImage
-              cldImg={bannerPhoto(
-                classDetails.bannerCldPubId ?? "",
-                classDetails.name
-              )}
-              alt="Class Banner"
-            />
-          ) : (
-            <img
-              src={classDetails.bannerUrl}
-              alt={classDetails.name}
-              loading="lazy"
-            />
-          )
+          <img
+            src={classDetails.bannerUrl}
+            alt={classDetails.name}
+            loading="lazy"
+          />
         ) : (
           <div className="placeholder" />
         )}

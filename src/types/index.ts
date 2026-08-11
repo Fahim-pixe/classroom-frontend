@@ -25,44 +25,23 @@ export type GetOneResponse<T = unknown> = {
   data?: T;
 };
 
-declare global {
-  interface CloudinaryUploadWidgetResults {
-    event: string;
-    info: {
-      secure_url: string;
-      public_id: string;
-      delete_token?: string;
-      resource_type: string;
-      original_filename: string;
-    };
-  }
-
-  interface CloudinaryWidget {
-    open: () => void;
-  }
-
-  interface Window {
-    cloudinary?: {
-      createUploadWidget: (
-        options: Record<string, unknown>,
-        callback: (
-          error: unknown,
-          result: CloudinaryUploadWidgetResults
-        ) => void
-      ) => CloudinaryWidget;
-    };
-  }
-}
-
 export interface UploadWidgetValue {
   url: string;
-  publicId: string;
+  assetId?: string;
+  publicId?: string;
 }
 
 export interface UploadWidgetProps {
   value?: UploadWidgetValue | null;
   onChange?: (value: UploadWidgetValue | null) => void;
   disabled?: boolean;
+}
+
+export interface StorageUploadValue {
+  assetId: string;
+  fileName: string;
+  mimeType: string;
+  fileSizeBytes: number;
 }
 
 export enum UserRole {

@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 
-import UploadWidget from "@/components/upload-widget";
+import { ProfileImageUploader } from "@/components/profile-image-uploader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router";
@@ -110,8 +110,9 @@ const Profile = () => {
         id: user.id,
         values: {
           name: parsed.data.name,
-          image: imageValue?.url ?? null,
-          imageCldPubId: imageValue?.publicId || null,
+          image: imageValue?.assetId ? user.image ?? null : imageValue?.url ?? null,
+          imageCldPubId: imageValue?.assetId ? null : imageValue?.publicId ?? null,
+          imageStorageAssetId: imageValue?.assetId ?? (imageValue ? undefined : null),
         },
         meta: {
           method: "put",
@@ -234,7 +235,7 @@ const Profile = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Profile picture</Label>
-                  <UploadWidget value={imageValue} onChange={setImageValue} disabled={mutation.isPending} />
+                  <ProfileImageUploader value={imageValue} onChange={setImageValue} disabled={mutation.isPending} />
                   <p className="text-xs text-muted-foreground">
                     Upload a new image to replace the current one, or use the trash button to remove it.
                   </p>

@@ -59,7 +59,57 @@ export const API_ENDPOINTS = {
     CLASS_USERS: (classId: string | number) => `/classes/${classId}/users`,
   },
   RESOURCE_UPLOAD_SIGNATURE: "/resources/upload-signature",
+  STORAGE: {
+    UPLOAD_INTENTS: "/storage/upload-intents",
+    CONFIRM_UPLOAD_INTENT: (intentId: string) => `/storage/upload-intents/${intentId}/confirm`,
+    CANCEL_UPLOAD_INTENT: (intentId: string) => `/storage/upload-intents/${intentId}/cancel`,
+    ACCESS_ASSET: (assetId: string, mode: "preview" | "download" = "preview") => `/storage/assets/${assetId}/access?mode=${mode}`,
+    REDIRECT_ASSET: (assetId: string) => `/storage/assets/${assetId}/redirect`,
+  },
 };
+
+export const STORAGE_CLIENT_CONFIG = {
+  assetKinds: {
+    avatar: "avatar",
+    classBanner: "class_banner",
+    resource: "resource",
+    submissionAttachment: "submission_attachment",
+  },
+  avatarUpload: {
+    maximumBytes: Number(import.meta.env.VITE_STORAGE_AVATAR_MAXIMUM_BYTES ?? 5 * 1024 * 1024),
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  },
+  classBannerUpload: {
+    maximumBytes: Number(import.meta.env.VITE_STORAGE_CLASS_BANNER_MAXIMUM_BYTES ?? 10 * 1024 * 1024),
+    allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+  },
+  resourceUpload: {
+    maximumBytes: Number(import.meta.env.VITE_STORAGE_RESOURCE_MAXIMUM_BYTES ?? 50 * 1024 * 1024),
+    allowedMimeTypes: [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ],
+  },
+  submissionAttachmentUpload: {
+    maximumBytes: Number(import.meta.env.VITE_STORAGE_SUBMISSION_ATTACHMENT_MAXIMUM_BYTES ?? 50 * 1024 * 1024),
+    allowedMimeTypes: [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ],
+  },
+} as const;
 
 export const ROLE_PERMISSION_GROUPS = [
   { label: "Academic", permissions: ["View departments", "Manage subjects", "Manage classes", "View academic calendar"] },
@@ -291,15 +341,6 @@ export const PERFORMANCE_CONFIG = {
   resourcePageSize: 24,
   queryStaleTimeMs: 15_000,
   queryGarbageCollectionTimeMs: 300_000,
-  cloudinaryWidgetLoadingLabel: "Preparing secure upload",
-  cloudinaryWidgetErrorLabel: "Upload service is temporarily unavailable",
-} as const;
-
-export const CLOUDINARY_WIDGET_CONFIG = {
-  scriptElementId: "cloudinary-upload-widget-script",
-  scriptUrl: "https://upload-widget.cloudinary.com/latest/global/all.js",
-  uploadFolder: "uploads",
-  maxFileSizeBytes: 10_000_000,
 } as const;
 
 export const UI_TOKENS = {
@@ -353,6 +394,3 @@ export const ALLOWED_TYPES = [
 export const ACCESS_TOKEN_KEY = import.meta.env.VITE_ACCESS_TOKEN_KEY;
 export const REFRESH_TOKEN_KEY = import.meta.env.VITE_REFRESH_TOKEN_KEY;
 export const REFRESH_TOKEN_URL = `${BASE_URL}/refresh-token`;
-export const CLOUDINARY_UPLOAD_URL = import.meta.env.VITE_CLOUDINARY_UPLOAD_URL;
-export const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-export const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
