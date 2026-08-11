@@ -147,6 +147,7 @@ export type NavigationItemConfig = {
 export type NavigationGroupConfig = {
   id: string;
   label: string;
+  order: number;
   roles: readonly NavigationRole[];
   items: readonly NavigationItemConfig[];
 };
@@ -171,6 +172,7 @@ export const NAVIGATION_CONFIG = {
     {
       id: "academic",
       label: "Academic",
+      order: 10,
       roles: STAFF_ROLES,
       items: [
         { id: "departments", label: "Departments", route: ROUTES.DEPARTMENTS.LIST, icon: Building2, roles: [USER_ROLES.ADMIN] },
@@ -182,6 +184,7 @@ export const NAVIGATION_CONFIG = {
     {
       id: "faculty",
       label: "Faculty",
+      order: 20,
       roles: STAFF_ROLES,
       items: [
         { id: "faculty-members", label: "Faculty Members", route: ROUTES.USERS.LIST, icon: Users, roles: STAFF_ROLES },
@@ -190,6 +193,7 @@ export const NAVIGATION_CONFIG = {
     {
       id: "teaching",
       label: "Teaching",
+      order: 30,
       roles: STAFF_ROLES,
       items: [
         { id: "assignments", label: "Assignments", route: ROUTES.ASSIGNMENTS.LIST, icon: ClipboardCheck, roles: STAFF_ROLES, activeRoutes: [ROUTES.ASSIGNMENTS.LIST, ROUTES.ASSIGNMENTS.LEARNING] },
@@ -201,6 +205,7 @@ export const NAVIGATION_CONFIG = {
     {
       id: "students",
       label: "Students",
+      order: 40,
       roles: STAFF_ROLES,
       items: [
         { id: "student-directory", label: "Student Directory", route: ROUTES.STUDENTS, icon: UserRound, roles: STAFF_ROLES },
@@ -211,6 +216,7 @@ export const NAVIGATION_CONFIG = {
     {
       id: "communication",
       label: "Communication",
+      order: 50,
       roles: ALL_NAVIGATION_ROLES,
       items: [
         { id: "announcements", label: "Announcements", route: ROUTES.ANNOUNCEMENTS, icon: Megaphone, roles: ALL_NAVIGATION_ROLES },
@@ -219,6 +225,7 @@ export const NAVIGATION_CONFIG = {
     {
       id: "administration",
       label: "Administration",
+      order: 60,
       roles: [USER_ROLES.ADMIN],
       items: [
         { id: "users", label: "Users", route: ROUTES.ADMIN_USERS, icon: Users, roles: [USER_ROLES.ADMIN] },
@@ -229,6 +236,7 @@ export const NAVIGATION_CONFIG = {
     {
       id: "my-academics",
       label: "My Academics",
+      order: 10,
       roles: [USER_ROLES.STUDENT],
       items: [
         { id: "my-classes", label: "My Classes", route: ROUTES.CLASSES.LIST, icon: GraduationCap, roles: [USER_ROLES.STUDENT] },
@@ -241,6 +249,7 @@ export const NAVIGATION_CONFIG = {
     {
       id: "learning",
       label: "Learning",
+      order: 20,
       roles: [USER_ROLES.STUDENT],
       items: [
         { id: "my-resources", label: "Resources & Materials", route: ROUTES.RESOURCES.LIST, icon: FolderOpen, roles: [USER_ROLES.STUDENT] },
@@ -249,6 +258,7 @@ export const NAVIGATION_CONFIG = {
     {
       id: "my-account",
       label: "My Account",
+      order: 70,
       roles: ALL_NAVIGATION_ROLES,
       items: [
         { id: "profile", label: "Profile", route: ROUTES.PROFILE, icon: UserRound, roles: ALL_NAVIGATION_ROLES },

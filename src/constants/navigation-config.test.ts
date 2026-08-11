@@ -6,11 +6,13 @@ const visibleGroupsFor = (role: (typeof USER_ROLES)[keyof typeof USER_ROLES]) =>
     .filter((group) => group.roles.includes(role))
     .map((group) => ({
       label: group.label,
+      order: group.order,
       items: group.items
         .filter((item) => item.roles.includes(role))
         .map((item) => item.label),
     }))
-    .filter((group) => group.items.length > 0);
+    .filter((group) => group.items.length > 0)
+    .sort((left, right) => left.order - right.order);
 
 describe("NAVIGATION_CONFIG", () => {
   it("shows administrative governance and teaching workflows to administrators", () => {
@@ -30,7 +32,12 @@ describe("NAVIGATION_CONFIG", () => {
     const groupLabels = groups.map((group) => group.label);
     const myAcademics = groups.find((group) => group.label === "My Academics");
 
-    expect(groupLabels).toContain("My Academics");
+    expect(groupLabels).toEqual([
+      "My Academics",
+      "Learning",
+      "Communication",
+      "My Account",
+    ]);
     expect(groupLabels).not.toContain("Administration");
     expect(myAcademics?.items).toEqual(
       expect.arrayContaining(["My Classes", "Assignments", "Attendance", "Grades"]),
