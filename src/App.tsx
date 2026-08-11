@@ -27,7 +27,7 @@ import { PageLoadingFallback } from "./components/refine-ui/layout/page-loading-
 import "./App.css";
 
 // Icons
-import { BookOpen, GraduationCap, Home, Building2, Users, ClipboardList, Clock3, UserRound, ShieldCheck, Settings, FolderOpen, Megaphone, ClipboardCheck, FileText, CalendarCheck } from "lucide-react";
+import { BookOpen, GraduationCap, Home, Building2, Users, ClipboardList, UserRound, ShieldCheck, Settings, FolderOpen, Megaphone, FileText, CalendarCheck, CalendarDays } from "lucide-react";
 
 // Pages are loaded on demand to keep the initial authenticated bundle focused on the active route.
 const Login = lazy(() => import("./pages/login").then(({ Login: Page }) => ({ default: Page })));
@@ -120,19 +120,19 @@ function App() {
                 { name: "departments", list: ROUTES.DEPARTMENTS.LIST, create: ROUTES.DEPARTMENTS.CREATE, edit: ROUTES.DEPARTMENTS.EDIT, show: ROUTES.DEPARTMENTS.SHOW, meta: { label: "Departments", icon: <Building2 />, parent: "academic" } },
                 { name: "subjects", list: ROUTES.SUBJECTS.LIST, create: ROUTES.SUBJECTS.CREATE, edit: ROUTES.SUBJECTS.EDIT, show: ROUTES.SUBJECTS.SHOW, meta: { label: "Subjects", icon: <BookOpen />, parent: "academic" } },
                 { name: "classes", list: ROUTES.CLASSES.LIST, create: ROUTES.CLASSES.CREATE, edit: ROUTES.CLASSES.EDIT, show: ROUTES.CLASSES.SHOW, meta: { label: "Classes", icon: <GraduationCap />, parent: "academic" } },
+                { name: "academic-calendar", list: ROUTES.MY_WEEK, meta: { label: "Academic Calendar", icon: <CalendarDays />, parent: "academic" } },
                 { name: "faculty", meta: { label: "Faculty", group: true } },
                 { name: "faculty-members", list: ROUTES.USERS.LIST, show: ROUTES.USERS.SHOW, meta: { label: "Faculty Members", icon: <Users />, parent: "faculty" } },
-                { name: "assignments", list: ROUTES.ASSIGNMENTS.LIST, meta: { label: "Assignments", icon: <ClipboardList />, parent: "faculty" } },
-                { name: "availability", list: ROUTES.AVAILABILITY, meta: { label: "Availability", icon: <Clock3 />, parent: "faculty" } },
+                { name: "teaching", meta: { label: "Teaching", group: true } },
+                { name: "assignments", list: ROUTES.ASSIGNMENTS.LIST, meta: { label: "Assignments", icon: <ClipboardList />, parent: "teaching" } },
+                { name: "attendance", list: ROUTES.ATTENDANCE.LIST, meta: { label: "Attendance", icon: <CalendarCheck />, parent: "teaching" } },
+                { name: "academic-records", list: ROUTES.ACADEMIC_RECORDS, meta: { label: "Grades & Assessments", icon: <FileText />, parent: "teaching" } },
+                { name: "resources", list: ROUTES.RESOURCES.LIST, meta: { label: "Resources & Materials", icon: <FolderOpen />, parent: "teaching" } },
                 { name: "students", meta: { label: "Students", group: true } },
                 { name: "student-directory", list: ROUTES.STUDENTS, meta: { label: "Student Directory", icon: <UserRound />, parent: "students" } },
                 { name: "enrollments", list: ROUTES.ENROLLMENTS.CREATE, meta: { label: "Enrollments", icon: <ClipboardList />, parent: "students" } },
-                { name: "academic-records", list: ROUTES.ACADEMIC_RECORDS, meta: { label: "Academic Records", icon: <FileText />, parent: "students" } },
-                { name: "learning", meta: { label: "Learning", group: true } },
-                { name: "resources", list: ROUTES.RESOURCES.LIST, meta: { label: "Resources & Materials", icon: <FolderOpen />, parent: "learning" } },
-                { name: "learning-assignments", list: ROUTES.ASSIGNMENTS.LEARNING, meta: { label: "Assignments", icon: <ClipboardCheck />, parent: "learning" } },
-                { name: "attendance", list: ROUTES.ATTENDANCE.LIST, meta: { label: "Attendance", icon: <CalendarCheck />, parent: "learning" } },
-                { name: "announcements", list: ROUTES.ANNOUNCEMENTS, meta: { label: "Announcements", icon: <Megaphone />, parent: "learning" } },
+                { name: "communication", meta: { label: "Communication", group: true } },
+                { name: "announcements", list: ROUTES.ANNOUNCEMENTS, meta: { label: "Announcements", icon: <Megaphone />, parent: "communication" } },
                 { name: "administration", meta: { label: "Administration", group: true } },
                 { name: "admin-users", list: ROUTES.ADMIN_USERS, meta: { label: "Users", icon: <Users />, parent: "administration" } },
                 { name: "roles-permissions", list: ROUTES.ROLES_PERMISSIONS, meta: { label: "Roles & Permissions", icon: <ShieldCheck />, parent: "administration" } },

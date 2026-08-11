@@ -15,11 +15,13 @@ import {
 import UploadWidget from "@/components/upload-widget";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { UploadWidgetValue, User } from "@/types";
+import { CONTEXTUAL_NAVIGATION, ROUTES } from "@/constants";
 
 const profileSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(120, "Name is too long"),
@@ -165,12 +167,22 @@ const Profile = () => {
             View and update the account information associated with your profile.
           </p>
         </div>
-        {!isEditing && (
-          <Button type="button" onClick={startEditing}>
-            <Edit3 className="mr-2 h-4 w-4" />
-            Edit profile
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {user?.role === "teacher" && (
+            <Button type="button" variant="outline" asChild>
+              <Link to={ROUTES.AVAILABILITY}>
+                <CalendarDays className="mr-2 h-4 w-4" />
+                {CONTEXTUAL_NAVIGATION.FACULTY_AVAILABILITY.label}
+              </Link>
+            </Button>
+          )}
+          {!isEditing && (
+            <Button type="button" onClick={startEditing}>
+              <Edit3 className="mr-2 h-4 w-4" />
+              Edit profile
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card className="overflow-hidden">

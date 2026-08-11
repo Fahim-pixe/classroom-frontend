@@ -1,4 +1,20 @@
-import { GraduationCap, School } from "lucide-react";
+import {
+  BookOpen,
+  Building2,
+  CalendarDays,
+  ClipboardCheck,
+  FileText,
+  FolderOpen,
+  GraduationCap,
+  Home,
+  Megaphone,
+  School,
+  Settings,
+  ShieldCheck,
+  UserRound,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
 export const APP_CONFIG = {
   NAME: "Norvyx University",
@@ -46,17 +62,18 @@ export const API_ENDPOINTS = {
 };
 
 export const ROLE_PERMISSION_GROUPS = [
-  { label: "Academic", permissions: ["View departments", "Manage subjects", "Manage classes"] },
-  { label: "Faculty", permissions: ["View faculty", "Manage assignments", "View availability"] },
+  { label: "Academic", permissions: ["View departments", "Manage subjects", "Manage classes", "View academic calendar"] },
+  { label: "Faculty", permissions: ["View faculty"] },
+  { label: "Teaching", permissions: ["Manage assignments", "Manage attendance", "Manage assessments", "Manage resources"] },
   { label: "Students", permissions: ["View student directory", "Manage enrollments", "View academic records"] },
-  { label: "Learning", permissions: ["Manage resources", "Manage assignments", "Manage attendance", "Publish announcements"] },
+  { label: "Communication", permissions: ["Publish announcements"] },
   { label: "Administration", permissions: ["Manage users", "Manage roles and permissions", "Manage settings"] },
 ] as const;
 
 export const ROLE_PERMISSION_MATRIX = {
   admin: { label: "Administrator", grantedGroups: ROLE_PERMISSION_GROUPS.map((group) => group.label) },
-  teacher: { label: "Teacher", grantedGroups: ["Academic", "Faculty", "Students", "Learning"] },
-  student: { label: "Student", grantedGroups: ["Academic", "Students", "Learning"] },
+  teacher: { label: "Teacher", grantedGroups: ["Academic", "Faculty", "Teaching", "Students", "Communication"] },
+  student: { label: "Student", grantedGroups: ["Academic", "Teaching", "Communication"] },
 } as const;
 
 export const ROUTES = {
@@ -113,6 +130,142 @@ export const ROUTES = {
   ROLES_PERMISSIONS: "/roles-permissions",
   SETTINGS: "/settings",
   MY_WEEK: "/my-week",
+} as const;
+
+export type NavigationRole =
+  (typeof USER_ROLES)[keyof typeof USER_ROLES];
+
+export type NavigationItemConfig = {
+  id: string;
+  label: string;
+  route: string;
+  icon: LucideIcon;
+  roles: readonly NavigationRole[];
+  activeRoutes?: readonly string[];
+};
+
+export type NavigationGroupConfig = {
+  id: string;
+  label: string;
+  roles: readonly NavigationRole[];
+  items: readonly NavigationItemConfig[];
+};
+
+const STAFF_ROLES = [USER_ROLES.ADMIN, USER_ROLES.TEACHER] as const;
+const ALL_NAVIGATION_ROLES = [
+  USER_ROLES.ADMIN,
+  USER_ROLES.TEACHER,
+  USER_ROLES.STUDENT,
+] as const;
+
+export const NAVIGATION_CONFIG = {
+  defaultRole: USER_ROLES.STUDENT,
+  dashboard: {
+    id: "dashboard",
+    label: "Dashboard",
+    route: ROUTES.HOME,
+    icon: Home,
+    roles: ALL_NAVIGATION_ROLES,
+  },
+  groups: [
+    {
+      id: "academic",
+      label: "Academic",
+      roles: STAFF_ROLES,
+      items: [
+        { id: "departments", label: "Departments", route: ROUTES.DEPARTMENTS.LIST, icon: Building2, roles: [USER_ROLES.ADMIN] },
+        { id: "subjects", label: "Subjects", route: ROUTES.SUBJECTS.LIST, icon: BookOpen, roles: STAFF_ROLES },
+        { id: "classes", label: "Classes", route: ROUTES.CLASSES.LIST, icon: GraduationCap, roles: STAFF_ROLES },
+        { id: "academic-calendar", label: "Academic Calendar", route: ROUTES.MY_WEEK, icon: CalendarDays, roles: STAFF_ROLES },
+      ],
+    },
+    {
+      id: "faculty",
+      label: "Faculty",
+      roles: STAFF_ROLES,
+      items: [
+        { id: "faculty-members", label: "Faculty Members", route: ROUTES.USERS.LIST, icon: Users, roles: STAFF_ROLES },
+      ],
+    },
+    {
+      id: "teaching",
+      label: "Teaching",
+      roles: STAFF_ROLES,
+      items: [
+        { id: "assignments", label: "Assignments", route: ROUTES.ASSIGNMENTS.LIST, icon: ClipboardCheck, roles: STAFF_ROLES, activeRoutes: [ROUTES.ASSIGNMENTS.LIST, ROUTES.ASSIGNMENTS.LEARNING] },
+        { id: "attendance", label: "Attendance", route: ROUTES.ATTENDANCE.LIST, icon: CalendarDays, roles: STAFF_ROLES },
+        { id: "grades-assessments", label: "Grades & Assessments", route: ROUTES.ACADEMIC_RECORDS, icon: FileText, roles: STAFF_ROLES },
+        { id: "resources", label: "Resources & Materials", route: ROUTES.RESOURCES.LIST, icon: FolderOpen, roles: STAFF_ROLES },
+      ],
+    },
+    {
+      id: "students",
+      label: "Students",
+      roles: STAFF_ROLES,
+      items: [
+        { id: "student-directory", label: "Student Directory", route: ROUTES.STUDENTS, icon: UserRound, roles: STAFF_ROLES },
+        { id: "enrollments", label: "Enrollments", route: ROUTES.ENROLLMENTS.CREATE, icon: ClipboardCheck, roles: [USER_ROLES.ADMIN] },
+        { id: "academic-records", label: "Academic Records", route: ROUTES.ACADEMIC_RECORDS, icon: FileText, roles: [USER_ROLES.ADMIN] },
+      ],
+    },
+    {
+      id: "communication",
+      label: "Communication",
+      roles: ALL_NAVIGATION_ROLES,
+      items: [
+        { id: "announcements", label: "Announcements", route: ROUTES.ANNOUNCEMENTS, icon: Megaphone, roles: ALL_NAVIGATION_ROLES },
+      ],
+    },
+    {
+      id: "administration",
+      label: "Administration",
+      roles: [USER_ROLES.ADMIN],
+      items: [
+        { id: "users", label: "Users", route: ROUTES.ADMIN_USERS, icon: Users, roles: [USER_ROLES.ADMIN] },
+        { id: "roles-permissions", label: "Roles & Permissions", route: ROUTES.ROLES_PERMISSIONS, icon: ShieldCheck, roles: [USER_ROLES.ADMIN] },
+        { id: "settings", label: "Settings", route: ROUTES.SETTINGS, icon: Settings, roles: [USER_ROLES.ADMIN] },
+      ],
+    },
+    {
+      id: "my-academics",
+      label: "My Academics",
+      roles: [USER_ROLES.STUDENT],
+      items: [
+        { id: "my-classes", label: "My Classes", route: ROUTES.CLASSES.LIST, icon: GraduationCap, roles: [USER_ROLES.STUDENT] },
+        { id: "my-assignments", label: "Assignments", route: ROUTES.ASSIGNMENTS.LEARNING, icon: ClipboardCheck, roles: [USER_ROLES.STUDENT], activeRoutes: [ROUTES.ASSIGNMENTS.LIST, ROUTES.ASSIGNMENTS.LEARNING] },
+        { id: "my-attendance", label: "Attendance", route: ROUTES.ATTENDANCE.LIST, icon: CalendarDays, roles: [USER_ROLES.STUDENT] },
+        { id: "my-grades", label: "Grades", route: ROUTES.ACADEMIC_RECORDS, icon: FileText, roles: [USER_ROLES.STUDENT] },
+        { id: "my-calendar", label: "Academic Calendar", route: ROUTES.MY_WEEK, icon: CalendarDays, roles: [USER_ROLES.STUDENT] },
+      ],
+    },
+    {
+      id: "learning",
+      label: "Learning",
+      roles: [USER_ROLES.STUDENT],
+      items: [
+        { id: "my-resources", label: "Resources & Materials", route: ROUTES.RESOURCES.LIST, icon: FolderOpen, roles: [USER_ROLES.STUDENT] },
+      ],
+    },
+    {
+      id: "my-account",
+      label: "My Account",
+      roles: ALL_NAVIGATION_ROLES,
+      items: [
+        { id: "profile", label: "Profile", route: ROUTES.PROFILE, icon: UserRound, roles: ALL_NAVIGATION_ROLES },
+      ],
+    },
+  ],
+} as const satisfies {
+  defaultRole: NavigationRole;
+  dashboard: NavigationItemConfig;
+  groups: readonly NavigationGroupConfig[];
+};
+
+export const CONTEXTUAL_NAVIGATION = {
+  FACULTY_AVAILABILITY: {
+    label: "Teaching availability",
+    description: "Review your scheduled teaching commitments and available timetable gaps.",
+  },
 } as const;
 
 export const ATTENDANCE_STATUS = {
