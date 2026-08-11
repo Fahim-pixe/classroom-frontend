@@ -137,7 +137,7 @@ const GradebookPage = () => {
             <Card>
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle>{isStudent ? "Current standing" : "Average recorded score"}</CardTitle>
-                <Award aria-hidden="true" className="h-[var(--icon-size-button)] w-[var(--icon-size-button)] text-primary" />
+                <Award aria-hidden="true" className="h-(--icon-size-button) w-(--icon-size-button) text-primary" />
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-foreground">{summaryLoading ? "Loading…" : scoreLabel}</p>
@@ -147,7 +147,7 @@ const GradebookPage = () => {
             <Card>
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle>Published evaluations</CardTitle>
-                <BookOpen aria-hidden="true" className="h-[var(--icon-size-button)] w-[var(--icon-size-button)] text-primary" />
+                <BookOpen aria-hidden="true" className="h-(--icon-size-button) w-(--icon-size-button) text-primary" />
               </CardHeader>
               <CardContent>
                 <p className="text-foreground">{summaryLoading ? "Loading…" : summary?.metrics.evaluationCount ?? 0}</p>
@@ -156,7 +156,7 @@ const GradebookPage = () => {
             <Card>
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle>{isStudent ? "Points recorded" : "Students evaluated"}</CardTitle>
-                <Users aria-hidden="true" className="h-[var(--icon-size-button)] w-[var(--icon-size-button)] text-primary" />
+                <Users aria-hidden="true" className="h-(--icon-size-button) w-(--icon-size-button) text-primary" />
               </CardHeader>
               <CardContent>
                 <p className="text-foreground">
