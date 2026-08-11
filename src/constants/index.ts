@@ -43,6 +43,13 @@ export const ROLE_OPTIONS = [
 export const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 export const BASE_URL = import.meta.env.VITE_API_URL;
 
+export const API_RESPONSE_POLICY = {
+  credentials: "include" as RequestCredentials,
+  jsonContentType: "application/json",
+  unexpectedResponseMessage: "The server returned an unexpected response. Please refresh and try again.",
+  fallbackErrorMessage: "The request could not be completed. Please refresh and try again.",
+} as const;
+
 export const API_ENDPOINTS = {
   DASHBOARD_STATS: "/stats/dashboard",
   MY_WEEK: "/calendar/my-week",
@@ -248,7 +255,7 @@ export const NAVIGATION_CONFIG = {
       items: [
         { id: "assignments", label: "Assignments", route: ROUTES.ASSIGNMENTS.LIST, icon: ClipboardCheck, roles: STAFF_ROLES, activeRoutes: [ROUTES.ASSIGNMENTS.LIST, ROUTES.ASSIGNMENTS.LEARNING] },
         { id: "attendance", label: "Attendance", route: ROUTES.ATTENDANCE.LIST, icon: CalendarDays, roles: STAFF_ROLES },
-        { id: "grades-assessments", label: "Grades & Assessments", route: ROUTES.ACADEMIC_RECORDS, icon: FileText, roles: STAFF_ROLES },
+        { id: "grades-assessments", label: "Grades & Assessments", route: ROUTES.ACADEMIC_RECORDS, icon: FileText, roles: [USER_ROLES.TEACHER] },
         { id: "resources", label: "Resources & Materials", route: ROUTES.RESOURCES.LIST, icon: FolderOpen, roles: STAFF_ROLES },
       ],
     },

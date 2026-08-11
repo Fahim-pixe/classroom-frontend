@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { NAVIGATION_CONFIG, USER_ROLES } from "./index";
+import {
+  NAVIGATION_CONFIG,
+  NavigationItemConfig,
+  ROUTES,
+  USER_ROLES,
+} from "./index";
 
 const visibleGroupsFor = (role: (typeof USER_ROLES)[keyof typeof USER_ROLES]) =>
   NAVIGATION_CONFIG.groups
@@ -42,6 +47,16 @@ describe("NAVIGATION_CONFIG", () => {
     expect(myAcademics?.items).toEqual(
       expect.arrayContaining(["My Classes", "Assignments", "Attendance", "Grades"]),
     );
+  });
+
+  it("assigns the academic-records route to exactly one administrator sidebar item", () => {
+    const academicRecordItems = NAVIGATION_CONFIG.groups.reduce<NavigationItemConfig[]>(
+      (items, group) => items.concat(group.items),
+      [],
+    ).filter((item) => item.roles.includes(USER_ROLES.ADMIN))
+      .filter((item) => item.route === ROUTES.ACADEMIC_RECORDS);
+
+    expect(academicRecordItems.map((item) => item.label)).toEqual(["Academic Records"]);
   });
 
   it("keeps availability out of global navigation", () => {

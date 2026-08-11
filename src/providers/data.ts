@@ -4,7 +4,81 @@ import {
 } from "@refinedev/rest";
 
 import { CreateResponse, GetOneResponse, ListResponse } from "@/types";
-import { BACKEND_BASE_URL } from "@/constants";
+import { API_RESPONSE_POLICY, BACKEND_BASE_URL } from "@/constants";
+
+type ApiErrorBody = {
+  error?: unknown;
+  message?: unknown;
+};
+
+type DataProviderError = {
+  message: string;
+  statusCode: number;
+  response: Response;
+};
+
+const readJsonResponse = async <T>(response: Response): Promise<T> => {
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  const responseText = await response.text();
+
+  if (!responseText) {
+    return {} as T;
+  }
+
+  if (!contentType.includes(API_RESPONSE_POLICY.jsonContentType)) {
+    throw {
+      message: API_RESPONSE_POLICY.unexpectedResponseMessage,
+      statusCode: response.status,
+      response,
+    } satisfies DataProviderError;
+  }
+
+  try {
+    return JSON.parse(responseText) as T;
+  } catch {
+    throw {
+      message: API_RESPONSE_POLICY.unexpectedResponseMessage,
+      statusCode: response.status,
+      response,
+    } satisfies DataProviderError;
+  }
+};
+
+const getErrorMessage = (payload: ApiErrorBody): string => {
+  if (typeof payload.error === "string") return payload.error;
+  if (typeof payload.message === "string") return payload.message;
+  return API_RESPONSE_POLICY.fallbackErrorMessage;
+};
+
+const toDataProviderError = async (response: Response): Promise<DataProviderError> => {
+  try {
+    const payload = await readJsonResponse<ApiErrorBody>(response);
+
+    return {
+      message: getErrorMessage(payload),
+      statusCode: response.status,
+      response,
+    };
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "message" in error) {
+      return error as DataProviderError;
+    }
+
+    return {
+      message: API_RESPONSE_POLICY.fallbackErrorMessage,
+      statusCode: response.status,
+      response,
+    };
+  }
+};
+
+const readSuccessfulJsonResponse = async <T>(response: Response): Promise<T> => {
+  if (!response.ok) {
+    throw await toDataProviderError(response);
+  }
+
+  return readJsonResponse<T>(response);
+};
 
 const options: CreateDataProviderOptions = {
   getList: {
@@ -84,12 +158,12 @@ const options: CreateDataProviderOptions = {
     },
 
     mapResponse: async (response) => {
-      const payload: ListResponse = await response.json();
+      const payload = await readSuccessfulJsonResponse<ListResponse>(response);
       return payload.data ?? [];
     },
 
     getTotalCount: async (response) => {
-      const payload: ListResponse = await response.json();
+      const payload = await readSuccessfulJsonResponse<ListResponse>(response);
       return payload.pagination?.total ?? payload.data?.length ?? 0;
     },
   },
@@ -100,29 +174,32 @@ const options: CreateDataProviderOptions = {
     buildBodyParams: async ({ variables }) => variables,
 
     mapResponse: async (response) => {
-      const json: CreateResponse = await response.json();
+      const json = await readSuccessfulJsonResponse<CreateResponse>(response);
       return json.data ?? {};
     },
+
+    transformError: toDataProviderError,
   },
 
   getOne: {
     getEndpoint: ({ resource, id }) => `${resource}/${id}`,
 
     mapResponse: async (response) => {
-      const json: GetOneResponse = await response.json();
+      const json = await readSuccessfulJsonResponse<GetOneResponse>(response);
       return json.data ?? {};
     },
+
   },
 
   custom: {
-    buildBodyParams: async ({ payload }: { payload?: any }) => payload,
-    mapResponse: async (response: Response) => {
-      const json = (await response.json());
-      return json as any;
-    },
+    buildBodyParams: async ({ payload }) => payload ?? {},
+    mapResponse: async (response: Response) => readSuccessfulJsonResponse(response),
+    transformError: toDataProviderError,
   },
 };
 
-const { dataProvider } = createDataProvider(BACKEND_BASE_URL, options);
+const { dataProvider } = createDataProvider(BACKEND_BASE_URL, options, {
+  credentials: API_RESPONSE_POLICY.credentials,
+});
 
 export { dataProvider };
