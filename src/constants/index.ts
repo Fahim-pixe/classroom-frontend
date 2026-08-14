@@ -59,6 +59,15 @@ export const API_ENDPOINTS = {
     LIST: "assignments",
   },
   MY_WEEK: "/calendar/my-week",
+  CALENDAR: {
+    LIST: "/calendar",
+    CLASSES: "/calendar/classes",
+    EVENT_BY_ID: (eventId: number) => `/calendar/${eventId}`,
+    LIST_WITH_RANGE: (start: string, end: string) => `/calendar?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,
+  },
+  NOTIFICATIONS: {
+    PREFERENCES: "/notifications/preferences",
+  },
   ACADEMIC_RECORDS: {
     LIST: "/gradebook",
     CLASSES: "/gradebook/classes",
@@ -245,6 +254,125 @@ export const CLASS_LIFECYCLE_CONFIG = {
   },
 } as const;
 
+export const CALENDAR_WORKFLOW_CONFIG = {
+  views: {
+    month: "month",
+    week: "week",
+  },
+  labels: {
+    month: "Month",
+    week: "Week",
+    title: "Academic calendar",
+    description: "Review classes, assignment deadlines, and academic events in one place.",
+    previous: "Previous period",
+    next: "Next period",
+    today: "Today",
+    createEvent: "Create event",
+    editEvent: "Edit event",
+    deleteEvent: "Delete event",
+    saveEvent: "Save event",
+    updateEvent: "Save changes",
+    cancel: "Cancel",
+    close: "Close",
+    loading: "Loading calendar…",
+    loadError: "The academic calendar could not be loaded. Please refresh and try again.",
+    empty: "No academic events are scheduled for this period.",
+    eventTitle: "Event title",
+    eventDescription: "Description",
+    eventType: "Event type",
+    eventClass: "Class",
+    globalEvent: "Institution-wide event",
+    startAt: "Starts",
+    endAt: "Ends",
+    allDay: "All day",
+    recurrence: "Repeats",
+    recurrenceNone: "Does not repeat",
+    recurrenceWeekly: "Weekly",
+    recurrenceMonthly: "Monthly",
+    events: "events",
+    due: "Due",
+    eventCreatePending: "Creating calendar event…",
+    eventCreateSuccess: "Calendar event created",
+    eventCreateError: "Unable to create calendar event",
+    eventUpdatePending: "Saving calendar event…",
+    eventUpdateSuccess: "Calendar event updated",
+    eventUpdateError: "Unable to update calendar event",
+    eventDeletePending: "Deleting calendar event…",
+    eventDeleteSuccess: "Calendar event deleted",
+    eventDeleteError: "Unable to delete calendar event",
+    errorDescription: "Please review the event details and try again.",
+    classRequired: "Select a class before saving this event.",
+  },
+  eventTypes: {
+    class_session: { label: "Class session" },
+    assignment_due: { label: "Assignment due" },
+    exam: { label: "Exam" },
+    holiday: { label: "Holiday" },
+    custom: { label: "Custom event" },
+  },
+  sourceLabels: {
+    calendar: "Calendar event",
+    assignment: "Assignment deadline",
+    class_session: "Class session",
+  },
+  recurrenceValues: ["none", "weekly", "monthly"],
+  createTypeByRole: {
+    [USER_ROLES.ADMIN]: ["exam", "holiday", "custom"],
+    [USER_ROLES.TEACHER]: ["exam", "custom"],
+    [USER_ROLES.STUDENT]: [],
+  },
+  defaultRecurrence: "none",
+  defaultEventType: "custom",
+  globalClassValue: "global",
+  defaultView: "month",
+  weekStartsOn: 1,
+  monthWeekCount: 6,
+  daysPerWeek: 7,
+  format: {
+    locale: "en-US",
+    month: { month: "long", year: "numeric" } as Intl.DateTimeFormatOptions,
+    weekday: { weekday: "short" } as Intl.DateTimeFormatOptions,
+    date: { day: "numeric" } as Intl.DateTimeFormatOptions,
+    eventTime: { hour: "numeric", minute: "2-digit" } as Intl.DateTimeFormatOptions,
+    eventDateTime: { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" } as Intl.DateTimeFormatOptions,
+  },
+} as const;
+
+export const NOTIFICATION_PREFERENCE_CONFIG = {
+  channels: {
+    inApp: "inAppPreferences",
+    email: "emailPreferences",
+  },
+  copy: {
+    title: "Notification preferences",
+    description: "Choose the academic events for which you want in-app or email notifications. Reminder delivery is not enabled in this release; your choices are saved for future use.",
+    inApp: "In-app",
+    email: "Email",
+    save: "Save notification preferences",
+    savePending: "Saving notification preferences…",
+    saveSuccess: "Notification preferences saved",
+    saveError: "Unable to save notification preferences",
+    errorDescription: "Please try again.",
+    loading: "Loading notification preferences…",
+    loadError: "Notification preferences could not be loaded. Please refresh and try again.",
+  },
+} as const;
+
+export const SETTINGS_CONFIG = {
+  copy: {
+    title: "Settings",
+    description: "Manage your display and notification preferences.",
+    appearanceTitle: "Appearance",
+    appearanceDescription: "Choose how the application should display its interface.",
+    appearancePreferenceLabel: "Appearance preference",
+  },
+  appearanceOptions: {
+    light: "Light",
+    dark: "Dark",
+    system: "System",
+  },
+} as const;
+
 export const STORAGE_CLIENT_CONFIG = {
   assetKinds: {
     avatar: "avatar",
@@ -361,6 +489,7 @@ export const ROUTES = {
   ADMIN_USERS: "/admin/users",
   ROLES_PERMISSIONS: "/roles-permissions",
   SETTINGS: "/settings",
+  CALENDAR: "/calendar",
   MY_WEEK: "/my-week",
 } as const;
 
@@ -410,7 +539,7 @@ export const NAVIGATION_CONFIG = {
         { id: "departments", label: "Departments", route: ROUTES.DEPARTMENTS.LIST, icon: Building2, roles: [USER_ROLES.ADMIN] },
         { id: "subjects", label: "Subjects", route: ROUTES.SUBJECTS.LIST, icon: BookOpen, roles: STAFF_ROLES },
         { id: "classes", label: "Classes", route: ROUTES.CLASSES.LIST, icon: GraduationCap, roles: STAFF_ROLES },
-        { id: "academic-calendar", label: "Academic Calendar", route: ROUTES.MY_WEEK, icon: CalendarDays, roles: STAFF_ROLES },
+        { id: "academic-calendar", label: "Academic Calendar", route: ROUTES.CALENDAR, icon: CalendarDays, roles: STAFF_ROLES },
       ],
     },
     {
@@ -462,7 +591,6 @@ export const NAVIGATION_CONFIG = {
       items: [
         { id: "users", label: "Users", route: ROUTES.ADMIN_USERS, icon: Users, roles: [USER_ROLES.ADMIN] },
         { id: "roles-permissions", label: "Roles & Permissions", route: ROUTES.ROLES_PERMISSIONS, icon: ShieldCheck, roles: [USER_ROLES.ADMIN] },
-        { id: "settings", label: "Settings", route: ROUTES.SETTINGS, icon: Settings, roles: [USER_ROLES.ADMIN] },
       ],
     },
     {
@@ -475,7 +603,7 @@ export const NAVIGATION_CONFIG = {
         { id: "my-assignments", label: "Assignments", route: ROUTES.ASSIGNMENTS.LEARNING, icon: ClipboardCheck, roles: [USER_ROLES.STUDENT], activeRoutes: [ROUTES.ASSIGNMENTS.LIST, ROUTES.ASSIGNMENTS.LEARNING] },
         { id: "my-attendance", label: "Attendance", route: ROUTES.ATTENDANCE.LIST, icon: CalendarDays, roles: [USER_ROLES.STUDENT] },
         { id: "my-grades", label: "Grades", route: ROUTES.ACADEMIC_RECORDS, icon: FileText, roles: [USER_ROLES.STUDENT] },
-        { id: "my-calendar", label: "Academic Calendar", route: ROUTES.MY_WEEK, icon: CalendarDays, roles: [USER_ROLES.STUDENT] },
+        { id: "my-calendar", label: "Academic Calendar", route: ROUTES.CALENDAR, icon: CalendarDays, roles: [USER_ROLES.STUDENT] },
       ],
     },
     {
@@ -494,6 +622,7 @@ export const NAVIGATION_CONFIG = {
       roles: ALL_NAVIGATION_ROLES,
       items: [
         { id: "profile", label: "Profile", route: ROUTES.PROFILE, icon: UserRound, roles: ALL_NAVIGATION_ROLES },
+        { id: "settings", label: "Settings", route: ROUTES.SETTINGS, icon: Settings, roles: ALL_NAVIGATION_ROLES },
       ],
     },
   ],

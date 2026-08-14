@@ -58,7 +58,7 @@ const AvailabilityPage = lazy(() => import("./pages/availability"));
 const AdminUsersPage = lazy(() => import("./pages/admin-users"));
 const RolesPermissionsPage = lazy(() => import("./pages/roles-permissions"));
 const SettingsPage = lazy(() => import("./pages/settings"));
-const MyWeekPage = lazy(() => import("./pages/my-week"));
+const CalendarPage = lazy(() => import("./pages/calendar"));
 const AssignmentsList = lazy(() => import("./pages/assignments/list"));
 const AssignmentsCreate = lazy(() => import("./pages/assignments/create"));
 const AssignmentsShow = lazy(() => import("./pages/assignments/show"));
@@ -123,7 +123,7 @@ function App() {
                 { name: "departments", list: ROUTES.DEPARTMENTS.LIST, create: ROUTES.DEPARTMENTS.CREATE, edit: ROUTES.DEPARTMENTS.EDIT, show: ROUTES.DEPARTMENTS.SHOW, meta: { label: "Departments", icon: <Building2 />, parent: "academic" } },
                 { name: "subjects", list: ROUTES.SUBJECTS.LIST, create: ROUTES.SUBJECTS.CREATE, edit: ROUTES.SUBJECTS.EDIT, show: ROUTES.SUBJECTS.SHOW, meta: { label: "Subjects", icon: <BookOpen />, parent: "academic" } },
                 { name: "classes", list: ROUTES.CLASSES.LIST, create: ROUTES.CLASSES.CREATE, edit: ROUTES.CLASSES.EDIT, show: ROUTES.CLASSES.SHOW, meta: { label: "Classes", icon: <GraduationCap />, parent: "academic" } },
-                { name: "academic-calendar", list: ROUTES.MY_WEEK, meta: { label: "Academic Calendar", icon: <CalendarDays />, parent: "academic" } },
+                { name: "academic-calendar", list: ROUTES.CALENDAR, meta: { label: "Academic Calendar", icon: <CalendarDays />, parent: "academic" } },
                 { name: "faculty", meta: { label: "Faculty", group: true } },
                 { name: "faculty-members", list: ROUTES.USERS.LIST, show: ROUTES.USERS.SHOW, meta: { label: "Faculty Members", icon: <Users />, parent: "faculty" } },
                 { name: "teaching", meta: { label: "Teaching", group: true } },
@@ -206,7 +206,8 @@ function App() {
                   <Route path={ROUTES.ADMIN_USERS.slice(1)} element={<AdminUsersPage />} />
                   <Route path={ROUTES.ROLES_PERMISSIONS.slice(1)} element={<RolesPermissionsPage />} />
                   <Route path={ROUTES.SETTINGS.slice(1)} element={<SettingsPage />} />
-                  <Route path={ROUTES.MY_WEEK.slice(1)} element={<MyWeekPage />} />
+                  <Route path={ROUTES.CALENDAR.slice(1)} element={<CalendarPage />} />
+                  <Route path={ROUTES.MY_WEEK.slice(1)} element={<CalendarPage />} />
                   <Route path={ROUTES.ASSIGNMENTS.LIST.slice(1)}>
                     <Route path="" element={<AssignmentsList />} />
                     <Route path="create" element={<AssignmentsCreate />} />

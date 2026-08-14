@@ -91,6 +91,47 @@ export type ClassDetails = {
   inviteCode?: string;
 };
 
+export type CalendarEventType = "class_session" | "assignment_due" | "exam" | "holiday" | "custom";
+export type CalendarEventSource = "calendar" | "assignment" | "class_session";
+
+export type CalendarEvent = {
+  id: string;
+  sourceEventId?: number;
+  source: CalendarEventSource;
+  classId: number | null;
+  className: string | null;
+  subjectName: string | null;
+  subjectCode: string | null;
+  title: string;
+  description: string | null;
+  type: CalendarEventType;
+  startAt: string;
+  endAt: string;
+  isAllDay: boolean;
+  recurrence: "none" | "weekly" | "monthly";
+  canManage: boolean;
+};
+
+export type CalendarClassOption = {
+  id: number;
+  name: string;
+  subjectName: string;
+  subjectCode: string;
+};
+
+export type CalendarPayload = {
+  rangeStart: string;
+  rangeEnd: string;
+  events: CalendarEvent[];
+};
+
+export type NotificationEventPreferenceMap = Record<CalendarEventType, boolean>;
+
+export type NotificationPreferences = {
+  inAppPreferences: NotificationEventPreferenceMap;
+  emailPreferences: NotificationEventPreferenceMap;
+};
+
 export type SignUpPayload = {
   email: string;
   name: string;
