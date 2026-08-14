@@ -362,6 +362,8 @@ export const PERFORMANCE_CONFIG = {
     assignmentsPageSize: 10,
     assignments: true,
     attendance: true,
+    gradeAssessments: true,
+    academicRecords: true,
   },
 } as const;
 

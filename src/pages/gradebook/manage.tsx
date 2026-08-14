@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { useCustom, useCustomMutation, useList, useNotification } from "@refinedev/core";
+import { useQueryClient } from "@tanstack/react-query";
 import { ClipboardCheck, Plus, Users } from "lucide-react";
 
+import { GradeAssessmentsSkeleton } from "@/components/gradebook/grade-assessments-skeleton";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { ListView } from "@/components/refine-ui/views/list-view";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { API_ENDPOINTS } from "@/constants";
+import { API_ENDPOINTS, ROUTES } from "@/constants";
+import { getRoutePrefetchedData } from "@/lib/route-data-preload";
 import type { GradebookEntry, User } from "@/types";
 
 type AcademicClass = {
@@ -28,6 +31,11 @@ type GradebookPayload = {
   data?: GradebookEntry[];
 };
 
+type GradeAssessmentsPrefetchPayload = {
+  classes?: { data: AcademicClassesPayload };
+  students?: { data: User[]; total: number };
+};
+
 type CustomQueryResponse<T> = {
   data: T | undefined;
   isLoading: boolean;
@@ -40,6 +48,8 @@ type CustomQueryResponse<T> = {
 const isWholeNumber = (value: number) => Number.isInteger(value);
 
 const GradeAssessmentsPage = () => {
+  const queryClient = useQueryClient();
+  const prefetchedGradeAssessments = getRoutePrefetchedData<GradeAssessmentsPrefetchPayload>(queryClient, ROUTES.GRADE_ASSESSMENTS);
   const { open: notify } = useNotification();
   const [selectedClassId, setSelectedClassId] = useState("");
   const [studentId, setStudentId] = useState("");
@@ -51,7 +61,7 @@ const GradeAssessmentsPage = () => {
   const classesQuery = useCustom({
     url: API_ENDPOINTS.ACADEMIC_RECORDS.CLASSES,
     method: "get",
-    queryOptions: { retry: 1 },
+    queryOptions: { retry: 1, initialData: prefetchedGradeAssessments?.classes },
   }) as unknown as CustomQueryResponse<AcademicClassesPayload>;
   const classesPayload = classesQuery.data?.data as AcademicClassesPayload | AcademicClass[] | undefined;
   const availableClasses = useMemo(
@@ -59,12 +69,16 @@ const GradeAssessmentsPage = () => {
     [classesPayload],
   );
   const activeClassId = selectedClassId || (availableClasses[0] ? String(availableClasses[0].id) : "");
+  const usesPrefetchedClass = activeClassId !== "" && String(availableClasses[0]?.id) === activeClassId;
 
   const { query: rosterQuery } = useList<User>({
     resource: activeClassId ? API_ENDPOINTS.ACADEMIC_RECORDS.CLASS_USERS(activeClassId) : "",
     filters: [{ field: "role", operator: "eq", value: "student" }],
     pagination: { mode: "off" },
-    queryOptions: { enabled: Boolean(activeClassId) },
+    queryOptions: {
+      enabled: Boolean(activeClassId),
+      initialData: usesPrefetchedClass ? prefetchedGradeAssessments?.students : undefined,
+    },
   });
   const students = useMemo(() => rosterQuery.data?.data ?? [], [rosterQuery.data?.data]);
 
@@ -134,15 +148,15 @@ const GradeAssessmentsPage = () => {
         </p>
       </section>
 
-      <section className="mt-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="space-y-1">
+      <section className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0 space-y-1">
           <p className="text-muted-foreground">Assessment class</p>
-          <p className="text-foreground">
+          <p className="truncate text-foreground">
             {availableClasses.find((item) => String(item.id) === activeClassId)?.subjectCode ?? "Select a class"}
           </p>
         </div>
         <Select value={activeClassId} onValueChange={(value) => { setSelectedClassId(value); clearForm(); }} disabled={classesQuery.isLoading || availableClasses.length === 0}>
-          <SelectTrigger aria-label="Select a class for assessment grading" className="w-full md:w-80">
+          <SelectTrigger aria-label="Select a class for assessment grading" className="w-full sm:w-80">
             <SelectValue placeholder="Select a class" />
           </SelectTrigger>
           <SelectContent>
@@ -156,18 +170,18 @@ const GradeAssessmentsPage = () => {
       </section>
 
       {classesQuery.isLoading ? (
-        <Card className="mt-6"><CardContent className="p-6 text-muted-foreground">Loading classes available for assessment management…</CardContent></Card>
+        <GradeAssessmentsSkeleton />
       ) : classesQuery.isError ? (
-        <Card className="mt-6"><CardContent className="p-6 text-destructive">Assessment classes could not be loaded. Please refresh and try again.</CardContent></Card>
+        <Card className="mt-5 sm:mt-6"><CardContent className="p-4 text-destructive sm:p-6">Assessment classes could not be loaded. Please refresh and try again.</CardContent></Card>
       ) : availableClasses.length === 0 ? (
-        <Card className="mt-6"><CardContent className="p-6 text-muted-foreground">No classes are available for assessment management.</CardContent></Card>
+        <Card className="mt-5 sm:mt-6"><CardContent className="p-4 text-muted-foreground sm:p-6">No classes are available for assessment management.</CardContent></Card>
       ) : (
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="mt-5 grid gap-4 sm:mt-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="p-4 sm:p-6">
               <CardTitle className="flex items-center gap-2"><Plus className="h-(--icon-size-button) w-(--icon-size-button)" aria-hidden="true" /> Record assessment</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
               <div className="space-y-2">
                 <label className="text-sm font-medium" htmlFor="grade-student">Student</label>
                 <Select value={studentId} onValueChange={setStudentId} disabled={rosterQuery.isLoading || students.length === 0}>
@@ -196,7 +210,7 @@ const GradeAssessmentsPage = () => {
                 <label className="text-sm font-medium" htmlFor="grade-feedback">Feedback</label>
                 <Textarea id="grade-feedback" value={feedback} onChange={(event) => setFeedback(event.target.value)} placeholder="Optional feedback for the student" maxLength={5000} />
               </div>
-              <Button onClick={submitGrade} disabled={mutation.isPending || rosterQuery.isLoading || students.length === 0}>
+              <Button className="w-full sm:w-auto" onClick={submitGrade} disabled={mutation.isPending || rosterQuery.isLoading || students.length === 0}>
                 <ClipboardCheck className="h-(--icon-size-button) w-(--icon-size-button)" aria-hidden="true" />
                 {mutation.isPending ? "Recording assessment…" : "Record assessment"}
               </Button>
@@ -204,11 +218,11 @@ const GradeAssessmentsPage = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardHeader className="flex-row items-center justify-between space-y-0 p-4 sm:p-6">
               <CardTitle className="flex items-center gap-2"><Users className="h-(--icon-size-button) w-(--icon-size-button)" aria-hidden="true" /> Recorded assessments</CardTitle>
               <Badge variant="secondary">{grades.length}</Badge>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
               {gradesQuery.isError ? (
                 <p className="text-destructive">Recorded assessments could not be loaded. Please refresh and try again.</p>
               ) : gradesQuery.isLoading ? (

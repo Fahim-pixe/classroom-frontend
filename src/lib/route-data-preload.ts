@@ -8,13 +8,17 @@ const ROUTE_DATA_QUERY_KEYS = {
   classes: ["route-data", ROUTES.CLASSES.LIST, API_ENDPOINTS.CLASSES.LIST],
   assignments: ["route-data", ROUTES.ASSIGNMENTS.LIST],
   attendance: ["route-data", ROUTES.ATTENDANCE.LIST],
+  gradeAssessments: ["route-data", ROUTES.GRADE_ASSESSMENTS],
+  academicRecords: ["route-data", ROUTES.ACADEMIC_RECORDS],
 } as const;
 
 type PrefetchableRoute =
   | typeof ROUTES.HOME
   | typeof ROUTES.CLASSES.LIST
   | typeof ROUTES.ASSIGNMENTS.LIST
-  | typeof ROUTES.ATTENDANCE.LIST;
+  | typeof ROUTES.ATTENDANCE.LIST
+  | typeof ROUTES.GRADE_ASSESSMENTS
+  | typeof ROUTES.ACADEMIC_RECORDS;
 
 type RouteDataPrefetchDependencies = {
   dataProvider: DataProvider;
@@ -26,6 +30,8 @@ function getRouteQueryKey(route: string) {
   if (route === ROUTES.CLASSES.LIST) return ROUTE_DATA_QUERY_KEYS.classes;
   if (route === ROUTES.ASSIGNMENTS.LIST) return ROUTE_DATA_QUERY_KEYS.assignments;
   if (route === ROUTES.ATTENDANCE.LIST) return ROUTE_DATA_QUERY_KEYS.attendance;
+  if (route === ROUTES.GRADE_ASSESSMENTS) return ROUTE_DATA_QUERY_KEYS.gradeAssessments;
+  if (route === ROUTES.ACADEMIC_RECORDS) return ROUTE_DATA_QUERY_KEYS.academicRecords;
 
   return undefined;
 }
@@ -63,6 +69,32 @@ export function preloadRouteData(route: string, { dataProvider, queryClient }: R
   const getList = dataProvider.getList;
   const custom = dataProvider.custom;
 
+  if (route === ROUTES.ACADEMIC_RECORDS && PERFORMANCE_CONFIG.routeDataPrefetch.academicRecords && custom) {
+    void queryClient.prefetchQuery({
+      queryKey: ROUTE_DATA_QUERY_KEYS.academicRecords,
+      queryFn: async () => {
+        const classes = await custom<{ data?: Array<{ id: string | number }> }>({
+          url: API_ENDPOINTS.ACADEMIC_RECORDS.CLASSES,
+          method: "get",
+        });
+        const classPayload = classes.data;
+        const availableClasses = Array.isArray(classPayload) ? classPayload : classPayload?.data ?? [];
+        const firstClassId = availableClasses[0]?.id;
+        const summary = firstClassId
+          ? await custom({
+              url: API_ENDPOINTS.ACADEMIC_RECORDS.SUMMARY,
+              method: "get",
+              query: { classId: String(firstClassId) },
+            })
+          : undefined;
+
+        return { classes, summary };
+      },
+      staleTime: PERFORMANCE_CONFIG.queryStaleTimeMs,
+    });
+    return;
+  }
+
   if (!getList) {
     return;
   }
@@ -86,6 +118,37 @@ export function preloadRouteData(route: string, { dataProvider, queryClient }: R
             },
           ],
         }),
+      staleTime: PERFORMANCE_CONFIG.queryStaleTimeMs,
+    });
+    return;
+  }
+
+  if (route === ROUTES.GRADE_ASSESSMENTS && PERFORMANCE_CONFIG.routeDataPrefetch.gradeAssessments && custom) {
+    void queryClient.prefetchQuery({
+      queryKey: ROUTE_DATA_QUERY_KEYS.gradeAssessments,
+      queryFn: async () => {
+        const classes = await custom<{ data?: Array<{ id: string | number }> }>({
+          url: API_ENDPOINTS.ACADEMIC_RECORDS.CLASSES,
+          method: "get",
+        });
+        const classPayload = classes.data;
+        const availableClasses = Array.isArray(classPayload) ? classPayload : classPayload?.data ?? [];
+        const firstClassId = availableClasses[0]?.id;
+        const students = firstClassId
+          ? await getList({
+              resource: API_ENDPOINTS.ACADEMIC_RECORDS.CLASS_USERS(firstClassId),
+              pagination: {
+                currentPage: 1,
+                pageSize: PERFORMANCE_CONFIG.routeDataPrefetch.classesPageSize,
+                mode: "server",
+              },
+              filters: [{ field: "role", operator: "eq", value: "student" }],
+              sorters: [],
+            })
+          : undefined;
+
+        return { classes, students };
+      },
       staleTime: PERFORMANCE_CONFIG.queryStaleTimeMs,
     });
     return;
