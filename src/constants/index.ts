@@ -55,6 +55,9 @@ export const API_ENDPOINTS = {
   CLASSES: {
     LIST: "classes",
   },
+  ASSIGNMENTS: {
+    LIST: "assignments",
+  },
   MY_WEEK: "/calendar/my-week",
   ACADEMIC_RECORDS: {
     LIST: "/gradebook",
@@ -356,6 +359,8 @@ export const PERFORMANCE_CONFIG = {
   routeDataPrefetch: {
     enabled: true,
     classesPageSize: 10,
+    assignments: true,
+    attendance: true,
   },
 } as const;
 

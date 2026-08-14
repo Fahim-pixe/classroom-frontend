@@ -1,16 +1,19 @@
 import { useMemo, useState } from "react";
 import { useCustom, useGetIdentity } from "@refinedev/core";
+import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { AlertTriangle, CalendarDays, CheckCircle2, Clock, FileQuestion, UserX, Users } from "lucide-react";
 
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
+import { AttendanceListSkeleton } from "@/components/attendance/attendance-list-skeleton";
 import { CreateButton } from "@/components/refine-ui/buttons/create";
 import { ListView } from "@/components/refine-ui/views/list-view";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { API_ENDPOINTS, ATTENDANCE_STATUS } from "@/constants";
+import { API_ENDPOINTS, ATTENDANCE_STATUS, ROUTES } from "@/constants";
+import { getRoutePrefetchedData } from "@/lib/route-data-preload";
 import type { AttendanceSession, User } from "@/types";
 
 type AttendanceClass = {
@@ -55,6 +58,12 @@ type CustomQueryResponse<T> = {
   isError: boolean;
 };
 
+type PrefetchedAttendanceData = {
+  classes?: { data: AttendanceClassesPayload };
+  summary?: { data: AttendanceSummaryPayload };
+  sessions?: { data: AttendanceListPayload };
+};
+
 const statusIcons = {
   present: CheckCircle2,
   absent: UserX,
@@ -64,11 +73,13 @@ const statusIcons = {
 
 const AttendanceList = () => {
   const { data: currentUser } = useGetIdentity<User>();
+  const queryClient = useQueryClient();
+  const prefetchedAttendance = getRoutePrefetchedData<PrefetchedAttendanceData>(queryClient, ROUTES.ATTENDANCE.LIST);
   const isStaff = currentUser?.role === "teacher" || currentUser?.role === "admin";
   const { data: classesResponse, isLoading: classesLoading, isError: classesError } = useCustom({
     url: API_ENDPOINTS.ATTENDANCE.CLASSES,
     method: "get",
-    queryOptions: { retry: 1 },
+    queryOptions: { retry: 1, initialData: prefetchedAttendance?.classes },
   }) as unknown as CustomQueryResponse<AttendanceClassesPayload>;
 
   const availableClasses = useMemo(() => {
@@ -77,19 +88,29 @@ const AttendanceList = () => {
   }, [classesResponse?.data]);
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const activeClassId = selectedClassId || (availableClasses[0] ? String(availableClasses[0].id) : "");
+  const prefetchedClassId = availableClasses[0] ? String(availableClasses[0].id) : "";
+  const usePrefetchedClassData = Boolean(activeClassId && activeClassId === prefetchedClassId);
 
   const { data: summaryResponse, isLoading: summaryLoading, isError: summaryError } = useCustom({
     url: API_ENDPOINTS.ATTENDANCE.SUMMARY,
     method: "get",
     config: { query: { classId: activeClassId } },
-    queryOptions: { enabled: Boolean(activeClassId), retry: 1 },
+    queryOptions: {
+      enabled: Boolean(activeClassId),
+      retry: 1,
+      initialData: usePrefetchedClassData ? prefetchedAttendance?.summary : undefined,
+    },
   }) as unknown as CustomQueryResponse<AttendanceSummaryPayload>;
 
   const { data: sessionsResponse, isLoading: sessionsLoading, isError: sessionsError } = useCustom({
     url: API_ENDPOINTS.ATTENDANCE.LIST,
     method: "get",
     config: { query: { classId: activeClassId } },
-    queryOptions: { enabled: Boolean(activeClassId), retry: 1 },
+    queryOptions: {
+      enabled: Boolean(activeClassId),
+      retry: 1,
+      initialData: usePrefetchedClassData ? prefetchedAttendance?.sessions : undefined,
+    },
   }) as unknown as CustomQueryResponse<AttendanceListPayload>;
 
   const summaryPayload = summaryResponse?.data as AttendanceSummaryPayload | AttendanceSummary | undefined;
@@ -120,7 +141,7 @@ const AttendanceList = () => {
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Select value={activeClassId} onValueChange={setSelectedClassId} disabled={classesLoading || availableClasses.length === 0}>
-            <SelectTrigger aria-label="Select an attendance class">
+            <SelectTrigger className="min-h-11 w-full sm:w-72" aria-label="Select an attendance class">
               <SelectValue placeholder="Select a class" />
             </SelectTrigger>
             <SelectContent>
@@ -131,26 +152,29 @@ const AttendanceList = () => {
               ))}
             </SelectContent>
           </Select>
-          {isStaff ? <CreateButton resource="attendance" /> : null}
+          {isStaff ? <CreateButton resource="attendance" className="min-h-11 w-full sm:w-auto" /> : null}
         </div>
       </section>
 
       {classesLoading ? (
-        <Card className="mt-6"><CardContent className="p-6 text-muted-foreground">Loading available attendance classes…</CardContent></Card>
+        <div className="mt-6"><AttendanceListSkeleton showStudentProgress={isStaff} /></div>
       ) : classesError ? (
         <Card className="mt-6"><CardContent className="p-6 text-destructive">Attendance classes could not be loaded. Please refresh and try again.</CardContent></Card>
       ) : availableClasses.length === 0 ? (
         <Card className="mt-6"><CardContent className="p-6 text-muted-foreground">No attendance records are available for your account yet.</CardContent></Card>
       ) : (
-        <>
-          <section className="mt-6 grid gap-4 md:grid-cols-3">
+        summaryLoading || sessionsLoading ? (
+          <div className="mt-6"><AttendanceListSkeleton showStudentProgress={isStaff} /></div>
+        ) : (
+          <>
+          <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             <Card>
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle>{isStaff ? "Class attendance" : "My attendance"}</CardTitle>
                 <CheckCircle2 aria-hidden="true" className="h-[var(--icon-size-button)] w-[var(--icon-size-button)] text-primary" />
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-foreground">{summaryLoading ? "Loading…" : attendanceLabel}</p>
+                <p className="text-foreground">{attendanceLabel}</p>
                 <Progress value={summary?.metrics.attendancePercent ?? 0} aria-label="Attendance percentage" />
               </CardContent>
             </Card>
@@ -159,22 +183,20 @@ const AttendanceList = () => {
                 <CardTitle>Recorded sessions</CardTitle>
                 <CalendarDays aria-hidden="true" className="h-[var(--icon-size-button)] w-[var(--icon-size-button)] text-primary" />
               </CardHeader>
-              <CardContent><p className="text-foreground">{summaryLoading ? "Loading…" : summary?.metrics.sessionCount ?? 0}</p></CardContent>
+              <CardContent><p className="text-foreground">{summary?.metrics.sessionCount ?? 0}</p></CardContent>
             </Card>
-            <Card>
+            <Card className="col-span-2 sm:col-span-1">
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle>{isStaff ? "Risk indicators" : "Attendance status"}</CardTitle>
                 <AlertTriangle aria-hidden="true" className="h-[var(--icon-size-button)] w-[var(--icon-size-button)] text-primary" />
               </CardHeader>
               <CardContent>
                 <p className="text-foreground">
-                  {summaryLoading
-                    ? "Loading…"
-                    : isStaff
-                      ? `${summary?.metrics.atRiskStudentCount ?? 0} students`
-                      : summary?.metrics.atRisk
-                        ? "Needs attention"
-                        : "On track"}
+                  {isStaff
+                    ? `${summary?.metrics.atRiskStudentCount ?? 0} students`
+                    : summary?.metrics.atRisk
+                      ? "Needs attention"
+                      : "On track"}
                 </p>
               </CardContent>
             </Card>
@@ -186,9 +208,9 @@ const AttendanceList = () => {
                 <CardTitle>Student attendance progress</CardTitle>
                 <p className="text-muted-foreground">Students below the configured attendance threshold are marked for review.</p>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-4 sm:p-6">
                 {summary.studentProgress.map((student) => (
-                  <article key={student.id} className="border-l-2 border-primary pl-4">
+                  <article key={student.id} className="border-l-2 border-primary pl-3 sm:pl-4">
                     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                       <div>
                         <p className="text-foreground">{student.name}</p>
@@ -210,11 +232,9 @@ const AttendanceList = () => {
               <CardTitle>Attendance sessions</CardTitle>
               {selectedClass ? <p className="text-muted-foreground">{selectedClass.subjectName}</p> : null}
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-4 sm:p-6">
               {summaryError || sessionsError ? (
                 <p className="text-destructive">Attendance records could not be loaded. Please refresh and try again.</p>
-              ) : summaryLoading || sessionsLoading ? (
-                <p className="text-muted-foreground">Loading attendance sessions…</p>
               ) : sessions.length === 0 ? (
                 <p className="text-muted-foreground">No attendance sessions have been recorded for this class yet.</p>
               ) : (
@@ -224,7 +244,7 @@ const AttendanceList = () => {
                     const status = myRecord?.status;
                     const StatusIcon = status ? statusIcons[status] : null;
                     return (
-                      <article key={session.id} className="border-l-2 border-primary p-4">
+                      <article key={session.id} className="border-l-2 border-primary p-3 sm:p-4">
                         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                           <div className="flex items-center gap-2 text-foreground">
                             <CalendarDays aria-hidden="true" className="h-[var(--icon-size-inline)] w-[var(--icon-size-inline)]" />
@@ -251,7 +271,8 @@ const AttendanceList = () => {
               )}
             </CardContent>
           </Card>
-        </>
+          </>
+        )
       )}
     </ListView>
   );

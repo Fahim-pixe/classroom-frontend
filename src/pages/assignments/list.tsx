@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { useGetIdentity, useList } from "@refinedev/core";
+import type { GetListResponse } from "@refinedev/core";
+import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +10,9 @@ import { ListView } from "@/components/refine-ui/views/list-view";
 import { CreateButton } from "@/components/refine-ui/buttons/create";
 import { ShowButton } from "@/components/refine-ui/buttons/show";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
+import { AssignmentsListSkeleton } from "@/components/assignments/assignments-list-skeleton";
+import { API_ENDPOINTS, ROUTES } from "@/constants";
+import { getRoutePrefetchedData } from "@/lib/route-data-preload";
 import { Assignment, ClassDetails, User } from "@/types";
 
 const STATUS_TABS = ["all", "todo", "submitted", "graded", "overdue"] as const;
@@ -37,24 +42,38 @@ const getDueLabel = (dueAt?: string | null) => {
   return `Due in ${difference}d`;
 };
 
+type PrefetchedAssignmentsData = {
+  classes?: GetListResponse<ClassDetails>;
+  assignments?: GetListResponse<Assignment>;
+};
+
 const AssignmentsList = () => {
   const { data: user } = useGetIdentity<User>();
+  const queryClient = useQueryClient();
+  const prefetchedAssignments = getRoutePrefetchedData<PrefetchedAssignmentsData>(queryClient, ROUTES.ASSIGNMENTS.LIST);
   const canModify = user?.role === "admin" || user?.role === "teacher";
   const [selectedClassId, setSelectedClassId] = useState("");
   const [activeTab, setActiveTab] = useState<StatusTab>("all");
 
   const { query: classesQuery } = useList<ClassDetails>({
-    resource: "classes",
+    resource: API_ENDPOINTS.CLASSES.LIST,
     pagination: { mode: "off" },
+    queryOptions: { initialData: prefetchedAssignments?.classes },
   });
   const classes = classesQuery?.data?.data ?? [];
   const activeClassId = selectedClassId || (classes.length ? String(classes[0].id) : "");
+  const prefetchedClassId = prefetchedAssignments?.classes?.data[0]?.id;
+  const prefetchedAssignmentsForActiveClass =
+    activeClassId && String(prefetchedClassId) === activeClassId ? prefetchedAssignments?.assignments : undefined;
 
   const { query: assignmentsQuery } = useList<Assignment>({
-    resource: "assignments",
+    resource: API_ENDPOINTS.ASSIGNMENTS.LIST,
     pagination: { mode: "off" },
     filters: activeClassId ? [{ field: "classId", operator: "eq", value: activeClassId }] : [],
-    queryOptions: { enabled: Boolean(activeClassId) },
+    queryOptions: {
+      enabled: Boolean(activeClassId),
+      initialData: prefetchedAssignmentsForActiveClass,
+    },
   });
   const assignments = (assignmentsQuery?.data?.data ?? []) as Assignment[];
 
@@ -76,22 +95,24 @@ const AssignmentsList = () => {
           <h1 className="page-title">Assignment Command Center</h1>
           <p className="text-muted-foreground">See what needs your attention and move each assignment forward.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <Select value={activeClassId} onValueChange={setSelectedClassId}>
-            <SelectTrigger className="w-64">
+            <SelectTrigger className="min-h-11 w-full sm:w-64">
               <SelectValue placeholder="Select a class" />
             </SelectTrigger>
             <SelectContent>
               {classes.map((classItem) => <SelectItem key={classItem.id} value={String(classItem.id)}>{classItem.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          {canModify && <CreateButton resource="assignments" />}
+          {canModify && <CreateButton resource={API_ENDPOINTS.ASSIGNMENTS.LIST} className="min-h-11 w-full sm:w-auto" />}
         </div>
       </div>
 
-      {activeClassId ? (
+      {classesQuery.isLoading ? (
+        <div className="mt-6"><AssignmentsListSkeleton /></div>
+      ) : activeClassId ? (
         <>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {STATUS_TABS.map((tab) => (
               <Card key={tab} className={activeTab === tab ? "border-primary" : undefined}>
                 <CardContent className="flex items-center justify-between p-4">
@@ -102,16 +123,16 @@ const AssignmentsList = () => {
             ))}
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Assignment status">
+          <div className="-mx-1 mt-6 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0" role="tablist" aria-label="Assignment status">
             {STATUS_TABS.map((tab) => (
-              <Button key={tab} type="button" size="sm" variant={activeTab === tab ? "default" : "outline"} onClick={() => setActiveTab(tab)} role="tab" aria-selected={activeTab === tab}>
+              <Button key={tab} type="button" size="sm" className="min-h-11 shrink-0" variant={activeTab === tab ? "default" : "outline"} onClick={() => setActiveTab(tab)} role="tab" aria-selected={activeTab === tab}>
                 {tab === "all" ? "All assignments" : tab[0].toUpperCase() + tab.slice(1)}
               </Button>
             ))}
           </div>
 
           {assignmentsQuery.isLoading ? (
-            <div className="mt-8 rounded-xl border border-border p-10 text-center text-muted-foreground">Loading assignments…</div>
+            <div className="mt-6"><AssignmentsListSkeleton /></div>
           ) : assignmentsQuery.isError ? (
             <div className="mt-8 rounded-xl border border-destructive/30 bg-destructive/5 p-10 text-center text-destructive">Assignments could not be loaded. Refresh and try again.</div>
           ) : filteredAssignments.length ? (
@@ -121,20 +142,20 @@ const AssignmentsList = () => {
                 return (
                   <Card key={assignment.id} className="flex flex-col">
                     <CardHeader className="gap-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
                           <CardTitle className="text-lg">{assignment.title}</CardTitle>
                           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{assignment.description}</p>
                         </div>
                         <Badge variant={status === "overdue" ? "destructive" : status === "graded" ? "default" : "secondary"}>{status}</Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+                    <CardContent className="mt-auto flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="text-sm text-muted-foreground">
                         <p>{formatDueDate(assignment.dueAt)}</p>
                         <p>{getDueLabel(assignment.dueAt)} · {assignment.maxPoints} points</p>
                       </div>
-                      <ShowButton resource="assignments" recordItemId={assignment.id} variant="outline" size="sm">Open assignment</ShowButton>
+                      <ShowButton resource={API_ENDPOINTS.ASSIGNMENTS.LIST} recordItemId={assignment.id} variant="outline" size="sm" className="min-h-11 w-full sm:w-auto">Open assignment</ShowButton>
                     </CardContent>
                   </Card>
                 );
