@@ -129,6 +129,10 @@ export const STORAGE_CLIENT_CONFIG = {
       "image/webp",
     ],
   },
+  delivery: {
+    uploadProgressMinimumPercent: 0,
+    uploadProgressMaximumPercent: 100,
+  },
 } as const;
 
 export const ROLE_PERMISSION_GROUPS = [

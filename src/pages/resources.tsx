@@ -9,6 +9,7 @@ import { useGetIdentity } from "@refinedev/core";
 import { API_ENDPOINTS, BACKEND_BASE_URL, PERFORMANCE_CONFIG, STORAGE_CLIENT_CONFIG, UI_TOKENS } from "@/constants";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
+import { uploadFileToSignedUrl } from "@/lib/storage-upload";
 import { ResourcesListSkeleton } from "@/components/resources/resources-list-skeleton";
 
 type Resource = {
@@ -55,6 +56,8 @@ export default function Resources() {
   const [description, setDescription] = useState("");
   const [resourceUrl, setResourceUrl] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isResourceUploading, setIsResourceUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState("");
   const [createCategory, setCreateCategory] = useState("lecture_notes");
   const debouncedSearch = useDebouncedValue(
@@ -106,6 +109,9 @@ export default function Resources() {
       await execute({
         action: async () => {
           if (selectedFile) {
+            setIsResourceUploading(true);
+            let uploadIntentId: string | null = null;
+            try {
         if (!Number.isInteger(Number(classId)) || Number(classId) < 1) {
           throw new Error("Select a class before uploading a resource");
         }
@@ -132,12 +138,13 @@ export default function Resources() {
         if (!intentResponse.ok) throw new Error(intentPayload.error || "Upload authorization failed");
 
         const intent = intentPayload.data;
-        const uploadResponse = await fetch(intent.signedUploadUrl, {
-          method: "PUT",
-          headers: intent.requiredHeaders,
-          body: selectedFile,
+        uploadIntentId = intent.uploadIntentId;
+        await uploadFileToSignedUrl({
+          signedUploadUrl: intent.signedUploadUrl,
+          requiredHeaders: intent.requiredHeaders,
+          file: selectedFile,
+          onProgress: setUploadProgress,
         });
-        if (!uploadResponse.ok) throw new Error("Secure file upload failed");
 
         const confirmationResponse = await fetch(`${BACKEND_BASE_URL}${API_ENDPOINTS.STORAGE.CONFIRM_UPLOAD_INTENT(intent.uploadIntentId)}`, {
           method: "POST",
@@ -148,6 +155,18 @@ export default function Resources() {
           throw new Error(confirmationPayload.error || "Uploaded file could not be verified");
         }
             storageAssetId = confirmationPayload.data.id;
+            } catch (error) {
+              if (uploadIntentId) {
+                await fetch(`${BACKEND_BASE_URL}${API_ENDPOINTS.STORAGE.CANCEL_UPLOAD_INTENT(uploadIntentId)}`, {
+                  method: "POST",
+                  credentials: "include",
+                }).catch(() => undefined);
+              }
+              throw error;
+            } finally {
+              setIsResourceUploading(false);
+              setUploadProgress(null);
+            }
           }
 
           if (!finalResourceUrl && !storageAssetId) throw new Error("Add a resource URL or choose a document to upload");
@@ -223,11 +242,12 @@ export default function Resources() {
         <select value={classId} onChange={(event) => setClassId(event.target.value)} required className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"><option value="">Select class</option>{classesData.map((item: any) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
         <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Title" required />
         <Input value={resourceUrl} onChange={(event) => setResourceUrl(event.target.value)} placeholder="File or link URL (optional when uploading)" type="url" required={!selectedFile} />
-        <Input type="file" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} accept={STORAGE_CLIENT_CONFIG.resourceUpload.allowedMimeTypes.join(",")} />
+        <Input type="file" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} accept={STORAGE_CLIENT_CONFIG.resourceUpload.allowedMimeTypes.join(",")} disabled={isResourceUploading} />
+        {isResourceUploading && <progress className="w-full md:col-span-2" value={uploadProgress ?? STORAGE_CLIENT_CONFIG.delivery.uploadProgressMinimumPercent} max={STORAGE_CLIENT_CONFIG.delivery.uploadProgressMaximumPercent} aria-label="Learning material upload progress" />}
         <select value={createCategory} onChange={(event) => setCreateCategory(event.target.value)} className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm">{Object.entries(categoryLabels).filter(([key]) => key !== "all").map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
         <Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Short description (optional)" className="md:col-span-2" />
         {uploadError && <p className="text-sm text-destructive md:col-span-2">{uploadError}</p>}
-        <div className="flex gap-3 md:col-span-2"><Button type="submit" disabled={createResourceMutation.isPending} className="rounded-xl bg-violet-600 hover:bg-violet-700">{createResourceMutation.isPending ? "Saving…" : "Save material"}</Button><Button type="button" variant="outline" onClick={() => setShowCreate(false)} className="rounded-xl">Cancel</Button></div>
+        <div className="flex gap-3 md:col-span-2"><Button type="submit" disabled={createResourceMutation.isPending || isResourceUploading} className="rounded-xl bg-violet-600 hover:bg-violet-700">{isResourceUploading ? `Uploading (${uploadProgress ?? STORAGE_CLIENT_CONFIG.delivery.uploadProgressMinimumPercent}%)` : createResourceMutation.isPending ? "Saving…" : "Save material"}</Button><Button type="button" variant="outline" onClick={() => setShowCreate(false)} className="rounded-xl">Cancel</Button></div>
       </form></CardContent></Card>}
 
       <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center">

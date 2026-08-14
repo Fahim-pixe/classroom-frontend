@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { FileUp, LoaderCircle, Trash2 } from "lucide-react";
 
 import { API_ENDPOINTS, BACKEND_BASE_URL, STORAGE_CLIENT_CONFIG } from "@/constants";
+import { uploadFileToSignedUrl } from "@/lib/storage-upload";
 import type { StorageUploadValue } from "@/types";
 import { Button } from "./ui/button";
 
@@ -38,6 +39,7 @@ export function SubmissionAttachmentUploader({
 }: SubmissionAttachmentUploaderProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
   const uploadAttachment = async (file: File | undefined) => {
@@ -75,12 +77,12 @@ export function SubmissionAttachmentUploader({
       }
       uploadIntentId = intentPayload.data.uploadIntentId;
 
-      const objectResponse = await fetch(intentPayload.data.signedUploadUrl, {
-        method: "PUT",
-        headers: intentPayload.data.requiredHeaders,
-        body: file,
+      await uploadFileToSignedUrl({
+        signedUploadUrl: intentPayload.data.signedUploadUrl,
+        requiredHeaders: intentPayload.data.requiredHeaders,
+        file,
+        onProgress: setUploadProgress,
       });
-      if (!objectResponse.ok) throw new Error("Attachment upload failed");
 
       const confirmationResponse = await fetch(
         `${BACKEND_BASE_URL}${API_ENDPOINTS.STORAGE.CONFIRM_UPLOAD_INTENT(uploadIntentId)}`,
@@ -107,6 +109,7 @@ export function SubmissionAttachmentUploader({
       setErrorMessage(error instanceof Error ? error.message : "Attachment upload failed");
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
       if (inputRef.current) inputRef.current.value = "";
     }
   };
@@ -144,9 +147,10 @@ export function SubmissionAttachmentUploader({
           className="w-full"
         >
           {isUploading ? <LoaderCircle className="size-4 animate-spin" /> : <FileUp className="size-4" />}
-          {isUploading ? "Uploading securely..." : "Choose an attachment"}
+          {isUploading ? `Uploading securely (${uploadProgress ?? STORAGE_CLIENT_CONFIG.delivery.uploadProgressMinimumPercent}%)` : "Choose an attachment"}
         </Button>
       )}
+      {isUploading && <progress className="w-full" value={uploadProgress ?? STORAGE_CLIENT_CONFIG.delivery.uploadProgressMinimumPercent} max={STORAGE_CLIENT_CONFIG.delivery.uploadProgressMaximumPercent} aria-label="Assignment attachment upload progress" />}
       {errorMessage && <p className="text-sm text-destructive" role="alert">{errorMessage}</p>}
     </div>
   );

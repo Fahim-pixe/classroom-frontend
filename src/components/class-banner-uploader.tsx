@@ -1,6 +1,7 @@
 import { Trash, UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { API_ENDPOINTS, BACKEND_BASE_URL, STORAGE_CLIENT_CONFIG } from "@/constants";
+import { uploadFileToSignedUrl } from "@/lib/storage-upload";
 import type { UploadWidgetValue } from "@/types";
 import { Button } from "./ui/button";
 
@@ -29,6 +30,7 @@ export function ClassBannerUploader({ value = null, classId, onChange, disabled 
   const previewUrlRef = useRef<string | null>(null);
   const [preview, setPreview] = useState<UploadWidgetValue | null>(value);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => setPreview(value), [value]);
@@ -74,12 +76,12 @@ export function ClassBannerUploader({ value = null, classId, onChange, disabled 
       if (!intentResponse.ok || !intentPayload.data) throw new Error(intentPayload.error || "Banner upload could not be authorized");
       uploadIntentId = intentPayload.data.uploadIntentId;
 
-      const objectResponse = await fetch(intentPayload.data.signedUploadUrl, {
-        method: "PUT",
-        headers: intentPayload.data.requiredHeaders,
-        body: file,
+      await uploadFileToSignedUrl({
+        signedUploadUrl: intentPayload.data.signedUploadUrl,
+        requiredHeaders: intentPayload.data.requiredHeaders,
+        file,
+        onProgress: setUploadProgress,
       });
-      if (!objectResponse.ok) throw new Error("Banner upload failed");
 
       const confirmationResponse = await fetch(
         `${BACKEND_BASE_URL}${API_ENDPOINTS.STORAGE.CONFIRM_UPLOAD_INTENT(uploadIntentId)}`,
@@ -106,6 +108,7 @@ export function ClassBannerUploader({ value = null, classId, onChange, disabled 
       setErrorMessage(error instanceof Error ? error.message : "Banner upload failed");
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
       if (inputRef.current) inputRef.current.value = "";
     }
   };
@@ -133,12 +136,13 @@ export function ClassBannerUploader({ value = null, classId, onChange, disabled 
           <span className="flex flex-col items-center justify-center gap-3 p-6 text-center">
             <UploadCloud className="size-10 text-primary" />
             <span>
-              <span className="block text-sm font-bold text-foreground">{isUploading ? "Uploading securely..." : "Choose a class banner"}</span>
+              <span className="block text-sm font-bold text-foreground">{isUploading ? `Uploading securely (${uploadProgress ?? STORAGE_CLIENT_CONFIG.delivery.uploadProgressMinimumPercent}%)` : "Choose a class banner"}</span>
               <span className="mt-1 block text-xs text-muted-foreground">JPEG, PNG, or WebP within the configured size limit</span>
             </span>
           </span>
         </Button>
       )}
+      {isUploading && <progress className="w-full" value={uploadProgress ?? STORAGE_CLIENT_CONFIG.delivery.uploadProgressMinimumPercent} max={STORAGE_CLIENT_CONFIG.delivery.uploadProgressMaximumPercent} aria-label="Class banner upload progress" />}
       {errorMessage && <p className="text-sm text-destructive" role="alert">{errorMessage}</p>}
     </div>
   );
