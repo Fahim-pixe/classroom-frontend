@@ -73,6 +73,9 @@ export const API_ENDPOINTS = {
     CLASS_USERS: (classId: string | number) => `/classes/${classId}/users`,
   },
   RESOURCE_UPLOAD_SIGNATURE: "/resources/upload-signature",
+  MONITORING: {
+    WEB_VITALS: "/monitoring/web-vitals",
+  },
   STORAGE: {
     UPLOAD_INTENTS: "/storage/upload-intents",
     CONFIRM_UPLOAD_INTENT: (intentId: string) => `/storage/upload-intents/${intentId}/confirm`,
@@ -366,6 +369,12 @@ export const PERFORMANCE_CONFIG = {
   resourcePageSize: 24,
   queryStaleTimeMs: 15_000,
   queryGarbageCollectionTimeMs: 300_000,
+  realUserMonitoring: {
+    enabled: import.meta.env.VITE_ENABLE_REAL_USER_MONITORING !== "false",
+    productionOnly: true,
+    deferredLoadTimeoutMilliseconds: 3_000,
+    maximumReportsPerMetric: 1,
+  },
   routeDataPrefetch: {
     enabled: true,
     classesPageSize: 10,
