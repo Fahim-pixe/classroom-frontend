@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { ProfileImageUploader } from "@/components/profile-image-uploader";
+import { ProfileSkeleton } from "@/components/profile/profile-skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router";
@@ -136,17 +137,7 @@ const Profile = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="page-title">My Profile</h1>
-          <p className="text-muted-foreground">Loading your account details...</p>
-        </div>
-        <Card>
-          <CardContent className="h-48 animate-pulse" />
-        </Card>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (!user) {

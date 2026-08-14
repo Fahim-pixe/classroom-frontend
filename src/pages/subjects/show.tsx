@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { ShowButton } from "@/components/refine-ui/buttons/show";
+import { EntityDetailSkeleton } from "@/components/views/entity-detail-skeleton";
 import {
   ShowView,
   ShowViewHeader,
@@ -236,13 +237,13 @@ const SubjectsShow = () => {
     return (
       <ShowView className="class-view">
         <ShowViewHeader resource="subjects" title="Subject Details" />
-        <p className="text-sm text-muted-foreground">
-          {query.isLoading
-            ? "Loading subject details..."
-            : query.isError
-            ? "Failed to load subject details."
-            : "Subject details not found."}
-        </p>
+        {query.isLoading ? (
+          <EntityDetailSkeleton />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {query.isError ? "Failed to load subject details." : "Subject details not found."}
+          </p>
+        )}
       </ShowView>
     );
   }

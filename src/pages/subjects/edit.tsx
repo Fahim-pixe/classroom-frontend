@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { EntityFormSkeleton } from "@/components/forms/entity-form-skeleton";
 import type { Department } from "@/types";
 
 const subjectEditSchema = z.object({
@@ -69,7 +69,7 @@ const SubjectsEdit = () => {
   };
 
   if (query?.isLoading) {
-    return <div className="flex justify-center p-10"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
+    return <EntityFormSkeleton fieldCount={4} />;
   }
 
   return (

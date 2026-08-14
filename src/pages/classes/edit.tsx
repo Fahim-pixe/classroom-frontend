@@ -25,6 +25,7 @@ import { useBack, useList } from "@refinedev/core";
 import { Loader2 } from "lucide-react";
 import { classSchema } from "@/lib/schema";
 import { ClassBannerUploader } from "@/components/class-banner-uploader";
+import { EntityFormSkeleton } from "@/components/forms/entity-form-skeleton";
 import type { Subject, User } from "@/types";
 import * as z from "zod";
 
@@ -75,7 +76,7 @@ const ClassesEdit = () => {
   const subjectsLoading = subjectsQuery.isLoading;
 
   if (query?.isLoading) {
-    return <div className="flex justify-center p-10"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
+    return <EntityFormSkeleton />;
   }
 
   return (

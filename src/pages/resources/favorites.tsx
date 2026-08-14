@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { ListView } from "@/components/refine-ui/views/list-view";
+import { ResourcesListSkeleton } from "@/components/resources/resources-list-skeleton";
 
 type Resource = {
   id: number;
@@ -73,7 +74,7 @@ const SavedResourcesPage = () => {
 
       <div className="mt-6">
         {isLoading ? (
-          <div className="p-12 text-center text-muted-foreground animate-pulse">Loading saved materials...</div>
+          <ResourcesListSkeleton />
         ) : savedResources.length === 0 ? (
           <Card className="rounded-2xl border-dashed border-border bg-card/50">
             <CardContent className="flex flex-col items-center py-16 text-center">

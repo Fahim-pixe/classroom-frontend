@@ -22,6 +22,8 @@ import { Input } from "@/components/ui/input";
 import { useNotificationProvider } from "@/components/refine-ui/notification/use-notification-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ClassDetailSkeleton } from "@/components/classes/class-detail-skeleton";
+import { ClassActivitySkeleton } from "@/components/classes/class-activity-skeleton";
 import { ClassDetails } from "@/types";
 
 type ClassUser = {
@@ -289,16 +291,16 @@ const ClassesShow = () => {
     },
   });
 
-  if (query.isLoading || query.isError || !classDetails) {
+  if (query.isLoading) {
+    return <ClassDetailSkeleton />;
+  }
+
+  if (query.isError || !classDetails) {
     return (
       <ShowView className="class-view class-show">
         <ShowViewHeader resource="classes" title="Class Details" />
         <p className="state-message">
-          {query.isLoading
-            ? "Loading class details..."
-            : query.isError
-            ? "Failed to load class details."
-            : "Class details not found."}
+          {query.isError ? "Failed to load class details." : "Class details not found."}
         </p>
       </ShowView>
     );
@@ -453,7 +455,7 @@ const ClassesShow = () => {
           )}
 
           {announcementsLoading ? (
-            <p className="text-sm text-muted-foreground">Loading announcements...</p>
+            <ClassActivitySkeleton />
           ) : announcementsData?.length ? (
             <div className="space-y-3">
               {announcementsData.map((announcement) => (
@@ -494,7 +496,7 @@ const ClassesShow = () => {
               <Button type="submit" disabled={assignmentMutation.isPending}>{assignmentMutation.isPending ? "Publishing..." : "Publish assignment"}</Button>
             </form>
           )}
-          {assignmentsLoading ? <p className="text-sm text-muted-foreground">Loading assignments...</p> : assignmentsData.length ? assignmentsData.map((assignment) => (
+          {assignmentsLoading ? <ClassActivitySkeleton /> : assignmentsData.length ? assignmentsData.map((assignment) => (
             <article key={assignment.id} className="rounded-lg border p-4">
               <div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold">{assignment.title}</h3><p className="text-xs text-muted-foreground">{assignment.dueAt ? `Due ${new Date(assignment.dueAt).toLocaleString()}` : "No due date"} · {assignment.maxPoints} points</p></div>{assignment.submission?.grade != null && <Badge variant="secondary">{assignment.submission.grade}/{assignment.maxPoints}</Badge>}</div>
               <p className="mt-3 whitespace-pre-wrap text-sm text-muted-foreground">{assignment.description}</p>
@@ -509,7 +511,7 @@ const ClassesShow = () => {
           <CardTitle>Attendance</CardTitle>
         </CardHeader>
         <CardContent>
-          {attendanceQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading attendance...</p> : attendanceData.length ? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{attendanceData.map((session) => { const counts = session.records.reduce((acc, record) => ({ ...acc, [record.status]: (acc[record.status] ?? 0) + 1 }), {} as Record<string, number>); return <article key={session.id} className="rounded-lg border p-4"><p className="font-medium">{new Date(session.sessionDate).toLocaleDateString()}</p><p className="text-sm text-muted-foreground">Present {counts.present ?? 0} · Late {counts.late ?? 0} · Absent {counts.absent ?? 0}</p>{session.notes && <p className="mt-2 text-sm text-muted-foreground">{session.notes}</p>}</article>; })}</div> : <p className="text-sm text-muted-foreground">No attendance sessions recorded yet.</p>}
+          {attendanceQuery.isLoading ? <ClassActivitySkeleton rows={3} /> : attendanceData.length ? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{attendanceData.map((session) => { const counts = session.records.reduce((acc, record) => ({ ...acc, [record.status]: (acc[record.status] ?? 0) + 1 }), {} as Record<string, number>); return <article key={session.id} className="rounded-lg border p-4"><p className="font-medium">{new Date(session.sessionDate).toLocaleDateString()}</p><p className="text-sm text-muted-foreground">Present {counts.present ?? 0} · Late {counts.late ?? 0} · Absent {counts.absent ?? 0}</p>{session.notes && <p className="mt-2 text-sm text-muted-foreground">{session.notes}</p>}</article>; })}</div> : <p className="text-sm text-muted-foreground">No attendance sessions recorded yet.</p>}
         </CardContent>
       </Card>
 
@@ -518,7 +520,7 @@ const ClassesShow = () => {
           <CardTitle>Gradebook</CardTitle>
         </CardHeader>
         <CardContent>
-          {gradebookQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading grades...</p> : gradebookData.length ? <div className="space-y-3">{gradebookData.map((entry) => <article key={entry.id} className="flex items-center justify-between gap-3 rounded-lg border p-4"><div><p className="font-medium">{entry.title}</p><p className="text-sm text-muted-foreground">{entry.student?.name ?? "Student"}{entry.feedback ? ` · ${entry.feedback}` : ""}</p></div><Badge variant="secondary">{entry.points}/{entry.maxPoints}</Badge></article>)}</div> : <p className="text-sm text-muted-foreground">No grades have been recorded yet.</p>}
+          {gradebookQuery.isLoading ? <ClassActivitySkeleton /> : gradebookData.length ? <div className="space-y-3">{gradebookData.map((entry) => <article key={entry.id} className="flex items-center justify-between gap-3 rounded-lg border p-4"><div><p className="font-medium">{entry.title}</p><p className="text-sm text-muted-foreground">{entry.student?.name ?? "Student"}{entry.feedback ? ` · ${entry.feedback}` : ""}</p></div><Badge variant="secondary">{entry.points}/{entry.maxPoints}</Badge></article>)}</div> : <p className="text-sm text-muted-foreground">No grades have been recorded yet.</p>}
         </CardContent>
       </Card>
 

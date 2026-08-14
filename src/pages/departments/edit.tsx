@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2 } from "lucide-react";
+import { EntityFormSkeleton } from "@/components/forms/entity-form-skeleton";
 
 const departmentSchema = z.object({
   code: z.string().min(2, "Department code must be at least 2 characters"),
@@ -38,7 +38,7 @@ const DepartmentsEdit = () => {
   };
 
   if (query?.isLoading) {
-    return <div className="flex justify-center p-10"><Loader2 className="animate-spin" /></div>;
+    return <EntityFormSkeleton fieldCount={3} />;
   }
 
   return (

@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { AttendanceRosterSkeleton } from "@/components/attendance/attendance-roster-skeleton";
 import { API_ENDPOINTS } from "@/constants";
 import type { User } from "@/types";
 
@@ -138,7 +139,7 @@ const AttendanceCreate = () => {
                 Select a class to load the roster.
               </div>
             ) : rosterQuery.isLoading ? (
-              <div className="p-8 text-center text-muted-foreground animate-pulse">Loading roster...</div>
+              <AttendanceRosterSkeleton />
             ) : students.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground border border-dashed border-border rounded-lg bg-muted/20">
                 This class currently has no enrolled students.

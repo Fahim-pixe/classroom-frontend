@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { SubmissionAttachmentUploader } from "@/components/submission-attachment-uploader";
+import { AssignmentDetailSkeleton } from "@/components/assignments/assignment-detail-skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNotificationProvider } from "@/components/refine-ui/notification/use-notification-provider";
 import { Assignment, StorageUploadValue, Submission, User } from "@/types";
@@ -83,7 +84,7 @@ const AssignmentsShow = () => {
     });
   };
 
-  if (query.isLoading) return <div className="p-10 text-center text-muted-foreground animate-pulse">Loading assignment details...</div>;
+  if (query.isLoading) return <AssignmentDetailSkeleton />;
 
   return (
     <ShowView className="class-view space-y-6">
