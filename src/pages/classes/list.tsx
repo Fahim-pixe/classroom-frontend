@@ -1,4 +1,5 @@
 import { useGetIdentity, useList } from "@refinedev/core";
+import { useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
@@ -17,11 +18,16 @@ import { ListView } from "@/components/refine-ui/views/list-view";
 import { CreateButton } from "@/components/refine-ui/buttons/create";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
+import { DataTablePagination } from "@/components/refine-ui/data-table/data-table-pagination";
+import { ClassesListSkeleton } from "@/components/classes/classes-list-skeleton";
+import { ClassesMobileList } from "@/components/classes/classes-mobile-list";
 import { ShowButton } from "@/components/refine-ui/buttons/show";
 import { EditButton } from "@/components/refine-ui/buttons/edit";
 import { DeleteButton } from "@/components/refine-ui/buttons/delete";
 
 import { Subject, User } from "@/types";
+import { API_ENDPOINTS, ROUTES } from "@/constants";
+import { getRoutePrefetchedData } from "@/lib/route-data-preload";
 
 type ClassListItem = {
   id: number;
@@ -39,6 +45,8 @@ type ClassListItem = {
 
 const ClassesList = () => {
   const { data: user } = useGetIdentity<User>();
+  const queryClient = useQueryClient();
+  const prefetchedClasses = getRoutePrefetchedData<{ data: ClassListItem[]; total: number }>(queryClient, ROUTES.CLASSES.LIST);
   const canModify = user?.role === "admin" || user?.role === "teacher";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
@@ -136,7 +144,7 @@ const ClassesList = () => {
         header: () => <p className="column-title">Details</p>,
         cell: ({ row }) => (
           <ShowButton
-            resource="classes"
+            resource={API_ENDPOINTS.CLASSES.LIST}
             recordItemId={row.original.id}
             variant="outline"
             size="sm"
@@ -152,7 +160,7 @@ const ClassesList = () => {
         cell: ({ row }) => (
           <div className="flex items-center justify-end gap-2">
             <ShowButton
-              resource="classes"
+              resource={API_ENDPOINTS.CLASSES.LIST}
               recordItemId={row.original.id}
               variant="outline"
               size="sm"
@@ -163,13 +171,13 @@ const ClassesList = () => {
             {canModify && (
               <>
                 <EditButton
-                  resource="classes"
+                  resource={API_ENDPOINTS.CLASSES.LIST}
                   recordItemId={row.original.id}
                   variant="outline"
                   size="sm"
                 />
                 <DeleteButton
-                  resource="classes"
+                  resource={API_ENDPOINTS.CLASSES.LIST}
                   recordItemId={row.original.id}
                   size="sm"
                 />
@@ -241,7 +249,10 @@ const ClassesList = () => {
   const classesTable = useTable<ClassListItem>({
     columns: classColumns,
     refineCoreProps: {
-      resource: "classes",
+      resource: API_ENDPOINTS.CLASSES.LIST,
+      queryOptions: {
+        initialData: prefetchedClasses,
+      },
       pagination: {
         pageSize: 10,
         mode: "server",
@@ -260,63 +271,94 @@ const ClassesList = () => {
     },
   });
 
+  const {
+    tableQuery,
+    currentPage,
+    setCurrentPage,
+    pageCount,
+    pageSize,
+    setPageSize,
+  } = classesTable.refineCore;
+  const classItems = tableQuery.data?.data ?? [];
+
   return (
-    <ListView>
+    <ListView className="gap-5">
       <Breadcrumb />
-      <h1 className="page-title">Classes</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="page-title">Classes</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Quick access to essential metrics and management tools.</p>
+        </div>
+        {canModify && <CreateButton resource={API_ENDPOINTS.CLASSES.LIST} className="min-h-11 w-full sm:w-auto" />}
+      </div>
 
-      <div className="intro-row">
-        <p>Quick access to essential metrics and management tools.</p>
-
-        <div className="actions-row">
-          <div className="search-field">
+      <section className="rounded-xl border border-border bg-card p-3 sm:p-4">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="search-field w-full">
             <Search className="search-icon" />
             <Input
               type="text"
               placeholder="Search by name..."
-              className="pl-10 w-full"
+              className="h-11 w-full pl-10"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />
           </div>
 
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by subject" />
-              </SelectTrigger>
+          <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+            <SelectTrigger className="h-11 w-full">
+              <SelectValue placeholder="Filter by subject" />
+            </SelectTrigger>
 
-              <SelectContent>
-                <SelectItem value="all">All Subjects</SelectItem>
-                {subjects.map((subject) => (
-                  <SelectItem key={subject.id} value={subject.name}>
-                    {subject.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectContent>
+              <SelectItem value="all">All Subjects</SelectItem>
+              {subjects.map((subject) => (
+                <SelectItem key={subject.id} value={subject.name}>
+                  {subject.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by teacher" />
-              </SelectTrigger>
+          <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+            <SelectTrigger className="h-11 w-full">
+              <SelectValue placeholder="Filter by teacher" />
+            </SelectTrigger>
 
-              <SelectContent>
-                <SelectItem value="all">All Teachers</SelectItem>
-                {teachers.map((teacher) => (
-                  <SelectItem key={teacher.id} value={teacher.name}>
-                    {teacher.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {canModify && <CreateButton resource="classes" />}
-          </div>
+            <SelectContent>
+              <SelectItem value="all">All Teachers</SelectItem>
+              {teachers.map((teacher) => (
+                <SelectItem key={teacher.id} value={teacher.name}>
+                  {teacher.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      </div>
+      </section>
 
-      <DataTable table={classesTable} />
+      {tableQuery.isLoading ? (
+        <ClassesListSkeleton />
+      ) : (
+        <>
+          <div className="hidden md:block">
+            <DataTable table={classesTable} />
+          </div>
+          <div className="space-y-4 md:hidden">
+            <ClassesMobileList classes={classItems} canModify={canModify} />
+            {classItems.length > 0 && (
+              <DataTablePagination
+                currentPage={currentPage}
+                pageCount={pageCount}
+                setCurrentPage={setCurrentPage}
+                pageSize={pageSize}
+                setPageSize={setPageSize}
+                total={tableQuery.data?.total}
+              />
+            )}
+          </div>
+        </>
+      )}
     </ListView>
   );
 };

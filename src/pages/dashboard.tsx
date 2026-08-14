@@ -12,12 +12,15 @@ import {
   Users,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import type { Assignment, User } from "@/types";
 import { UserRole } from "@/types";
 import { API_ENDPOINTS, ROUTES } from "@/constants";
+import { getRoutePrefetchedData } from "@/lib/route-data-preload";
 
 const TeacherDashboard = lazy(() => import("@/pages/teacher-dashboard"));
 const DeferredAdminDashboardAnalytics = lazy(() =>
@@ -30,16 +33,6 @@ const emptyLatest = { latestClasses: [], latestTeachers: [] };
 
 type AdminDashboardProps = { currentUser?: User };
 type RoleRow = { name: string; value: number };
-
-type DashboardRouteFallbackProps = {
-  label: string;
-};
-
-const DashboardRouteFallback = ({ label }: DashboardRouteFallbackProps) => (
-  <div className="flex min-h-96 items-center justify-center" role="status" aria-live="polite">
-    <p className="text-sm text-muted-foreground">{label}</p>
-  </div>
-);
 
 const DashboardAnalyticsFallback = () => (
   <section className="grid gap-6 xl:grid-cols-[minmax(320px,0.8fr)_minmax(0,1.55fr)]" aria-busy="true">
@@ -124,21 +117,21 @@ const StatCard = ({
   icon: typeof Users;
 }) => (
   <Card className="relative overflow-hidden transition-shadow hover:shadow-md">
-    <CardContent className="p-6">
-      <Ellipsis className="absolute right-5 top-5 h-5 w-5 text-muted-foreground" />
-      <p className="text-base font-medium text-foreground">{label}</p>
-      <p className="mt-8 text-4xl font-semibold tracking-tight text-foreground">{value}</p>
+    <CardContent className="p-4 sm:p-6">
+      <Ellipsis className="absolute right-4 top-4 h-4 w-4 text-muted-foreground sm:right-5 sm:top-5 sm:h-5 sm:w-5" />
+      <p className="text-sm font-medium text-foreground sm:text-base">{label}</p>
+      <p className="mt-6 text-3xl font-semibold tracking-tight text-foreground sm:mt-8 sm:text-4xl">{value}</p>
 
       {trend ? (
-        <div className={`mt-5 flex items-center gap-2 text-sm font-medium ${positive ? "text-emerald-500" : "text-red-500"}`}>
+        <div className={`mt-4 flex items-center gap-1 text-xs font-medium sm:mt-5 sm:gap-2 sm:text-sm ${positive ? "text-emerald-500" : "text-red-500"}`}>
           {positive ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownRight className="h-5 w-5" />}
           <span>{trend}</span>
           <span className="font-normal text-muted-foreground">{trendLabel}</span>
         </div>
       ) : (
-        <div className="mt-5 h-5" />
+        <div className="mt-4 h-4 sm:mt-5 sm:h-5" />
       )}
-      <Icon className="absolute bottom-5 right-5 h-5 w-5 text-primary/30" />
+      <Icon className="absolute bottom-4 right-4 h-4 w-4 text-primary/30 sm:bottom-5 sm:right-5 sm:h-5 sm:w-5" />
     </CardContent>
   </Card>
 );
@@ -146,13 +139,13 @@ const StatCard = ({
 const QuickAction = ({ title, description, icon: Icon, to }: { title: string; description: string; icon: typeof Users; to: string }) => {
   const Link = useLink();
   return (
-    <Link to={to} className="group flex min-h-28 items-center gap-5 rounded-2xl border border-border bg-card px-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
-      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20">
-        <Icon className="h-6 w-6" />
+    <Link to={to} className="group flex min-h-24 items-center gap-3 rounded-2xl border border-border bg-card px-4 shadow-sm transition-transform hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md sm:min-h-28 sm:gap-5 sm:px-6">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20 sm:h-14 sm:w-14">
+        <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
       </span>
-      <span>
-        <span className="block text-lg font-semibold text-foreground">{title}</span>
-        <span className="mt-1 block text-sm text-muted-foreground">{description}</span>
+      <span className="min-w-0">
+        <span className="block text-base font-semibold text-foreground sm:text-lg">{title}</span>
+        <span className="mt-1 block text-xs text-muted-foreground sm:text-sm">{description}</span>
       </span>
     </Link>
   );
@@ -160,11 +153,13 @@ const QuickAction = ({ title, description, icon: Icon, to }: { title: string; de
 
 const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
   const Link = useLink();
+  const queryClient = useQueryClient();
+  const prefetchedDashboard = getRoutePrefetchedData<{ data: Record<string, unknown> }>(queryClient, ROUTES.HOME);
 
   const { data: dashboardRes, isLoading, isError: hasError } = useCustom({
     url: API_ENDPOINTS.DASHBOARD_STATS,
     method: "get",
-    queryOptions: { retry: 1 },
+    queryOptions: { retry: 1, initialData: prefetchedDashboard },
   }) as unknown as CustomQueryResponse<DashboardApiResponse>;
 
   const dashboard = dashboardRes?.data ?? dashboardRes ?? {};
@@ -175,11 +170,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
   const firstName = currentUser?.name?.split(" ")[0] || "there";
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-96 items-center justify-center">
-        <p className="animate-pulse text-sm text-muted-foreground">Loading dashboard statistics...</p>
-      </div>
-    );
+    return <DashboardSkeleton variant="admin" />;
   }
 
   const roleRows: RoleRow[] = Array.isArray(charts.usersByRole)
@@ -194,16 +185,16 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
 
   return (
     <div className="min-h-full bg-background px-1 pb-10 text-foreground sm:px-2">
-      <section className="flex flex-col justify-between gap-6 pb-10 pt-2 md:flex-row md:items-start">
-        <div>
-          <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">Welcome back, {firstName}</h1>
-          <p className="mt-4 text-lg text-muted-foreground">Track, manage and monitor your classes, students and academic activities.</p>
+      <section className="flex flex-col justify-between gap-4 pb-8 pt-2 sm:gap-6 sm:pb-10 md:flex-row md:items-start">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">Welcome back, {firstName}</h1>
+          <p className="mt-3 text-base text-muted-foreground sm:mt-4 sm:text-lg">Track, manage and monitor your classes, students and academic activities.</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="h-12 rounded-xl border-border bg-card px-5 text-base shadow-sm" asChild>
+        <div className="grid w-full grid-cols-2 gap-3 md:w-auto">
+          <Button variant="outline" className="h-11 w-full rounded-xl border-border bg-card px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
             <Link to={ROUTES.SUBJECTS.LIST}><FileUp className="mr-2 h-5 w-5" /> Import</Link>
           </Button>
-          <Button className="h-12 rounded-xl px-5 text-base shadow-sm" asChild>
+          <Button className="h-11 w-full rounded-xl px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
             <Link to={ROUTES.CLASSES.CREATE}><Plus className="mr-2 h-5 w-5" /> Add</Link>
           </Button>
         </div>
@@ -220,7 +211,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
         </div>
       </section>
 
-      <section className="grid gap-5 py-8 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 py-6 sm:gap-5 sm:py-8 xl:grid-cols-4">
         <StatCard label="Total students" value={toNumber(overview.users)} trend={metrics.comparisons?.totalStudents} trendLabel="vs last month" icon={Users} />
         <StatCard label="Faculty" value={toNumber(overview.teachers)} trend={metrics.comparisons?.faculty} trendLabel="vs last month" positive={false} icon={GraduationCap} />
         <StatCard label="Classes" value={toNumber(overview.classes)} trend={metrics.comparisons?.activeClasses} trendLabel="vs last month" icon={Layers3} />
@@ -260,11 +251,13 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
 
 const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
   const Link = useLink();
+  const queryClient = useQueryClient();
+  const prefetchedDashboard = getRoutePrefetchedData<{ data: Record<string, unknown> }>(queryClient, ROUTES.HOME);
 
   const { data: dashboardRes, isLoading, isError } = useCustom({
     url: API_ENDPOINTS.DASHBOARD_STATS,
     method: "get",
-    queryOptions: { retry: 1 },
+    queryOptions: { retry: 1, initialData: prefetchedDashboard },
   }) as unknown as CustomQueryResponse<DashboardApiResponse>;
 
   const dashboard = dashboardRes?.data ?? dashboardRes ?? {};
@@ -274,20 +267,20 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
   const announcements = Array.isArray(dashboard.recentAnnouncements) ? dashboard.recentAnnouncements : [];
   const firstName = currentUser?.name?.split(" ")[0] || "there";
 
-  if (isLoading) return <div className="flex min-h-96 items-center justify-center"><p className="animate-pulse text-sm text-muted-foreground">Loading your student command center...</p></div>;
+  if (isLoading) return <DashboardSkeleton variant="student" />;
 
   return (
-    <div className="min-h-full bg-background px-1 pb-10 text-foreground sm:px-2 space-y-8">
-      <section className="flex flex-col justify-between gap-6 pt-2 md:flex-row md:items-start">
-        <div>
-          <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">Good morning, {firstName} 👋</h1>
-          <p className="mt-2 text-lg text-muted-foreground">Your academic command center for classes, deadlines, and announcements.</p>
+    <div className="min-h-full space-y-6 bg-background px-1 pb-10 text-foreground sm:space-y-8 sm:px-2">
+      <section className="flex flex-col justify-between gap-4 pt-2 sm:gap-6 md:flex-row md:items-start">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">Good morning, {firstName}</h1>
+          <p className="mt-2 text-base text-muted-foreground sm:text-lg">Your academic command center for classes, deadlines, and announcements.</p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" className="h-12 rounded-xl px-5 text-base shadow-sm" asChild>
+        <div className="grid w-full grid-cols-2 gap-3 md:w-auto">
+          <Button variant="outline" className="h-11 w-full rounded-xl px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
             <Link to={ROUTES.MY_WEEK}>My week</Link>
           </Button>
-          <Button className="h-12 rounded-xl px-5 text-base shadow-sm" asChild>
+          <Button className="h-11 w-full rounded-xl px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
             <Link to={ROUTES.CLASSES.LIST}><Plus className="mr-2 h-5 w-5" /> Join class</Link>
           </Button>
         </div>
@@ -295,7 +288,7 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
 
       {isError && <div className="rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">Some personal dashboard data could not be loaded.</div>}
 
-      <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-4">
         <StatCard label="Active Classes" value={toNumber(metrics.myClasses)} icon={Layers3} />
         <StatCard label="Attendance Rate" value={metrics.attendance == null ? "—" : `${metrics.attendance}%`} icon={Users} />
         <StatCard label="Pending Work" value={toNumber(metrics.assignments)} icon={PenLine} />
@@ -319,17 +312,17 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
                   const startTime = item.schedules?.[0]?.startTime;
                   const day = item.schedules?.[0]?.day;
                   return (
-                    <div key={item.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50">
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs uppercase">
+                    <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/50 sm:p-4">
+                      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                        <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-xs uppercase sm:h-12 sm:w-12">
                           <span>{day ? day.slice(0, 3) : "—"}</span>
                         </div>
-                        <div>
-                          <p className="font-semibold text-foreground text-base">{item.subjectName || item.name}</p>
-                          <p className="text-sm text-muted-foreground">{item.name}</p>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground sm:text-base">{item.subjectName || item.name}</p>
+                          <p className="truncate text-xs text-muted-foreground sm:text-sm">{item.name}</p>
                         </div>
                       </div>
-                      <Badge variant="secondary" className="font-medium text-sm px-3 py-1">
+                      <Badge variant="secondary" className="shrink-0 px-2 py-1 text-xs font-medium sm:px-3 sm:text-sm">
                         {startTime || "Time pending"}
                       </Badge>
                     </div>
@@ -359,7 +352,7 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
                     <div key={item.id} className="relative pl-6 border-l-2 border-primary/40 space-y-1 pb-4 last:pb-0">
                       <div className="absolute -left-1.75 top-1 h-3 w-3 rounded-full bg-primary" />
                       <div className="flex items-center justify-between gap-3">
-                        <p className="font-semibold text-foreground text-sm">{item.title}</p>
+                        <p className="min-w-0 truncate text-sm font-semibold text-foreground">{item.title}</p>
                         {item.submission?.submittedAt ? (
                           <Badge variant="secondary">Submitted</Badge>
                         ) : isSoon ? (
@@ -394,10 +387,10 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {announcements.map((item: AnnouncementItem) => (
-                <div key={item.id} className="rounded-xl border border-border bg-card p-4 space-y-2">
-                  <div className="flex justify-between items-start">
-                    <p className="font-semibold text-foreground">{item.title}</p>
-                    <span className="text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleDateString()}</span>
+                  <div key={item.id} className="space-y-2 rounded-xl border border-border bg-card p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="min-w-0 break-words font-semibold text-foreground">{item.title}</p>
+                    <span className="shrink-0 text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleDateString()}</span>
                   </div>
                   <p className="text-sm text-muted-foreground">{item.className}</p>
                 </div>
@@ -413,11 +406,11 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
 const Dashboard = () => {
   const { data: currentUser, isLoading } = useGetIdentity<User>();
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">Loading dashboard...</p>;
+    return <DashboardSkeleton variant="student" />;
   }
   if (currentUser?.role === UserRole.TEACHER) {
     return (
-      <Suspense fallback={<DashboardRouteFallback label="Loading your teaching workspace…" />}>
+      <Suspense fallback={<DashboardSkeleton variant="student" />}>
         <TeacherDashboard teacher={currentUser} />
       </Suspense>
     );

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useGetIdentity, useLink, useRefineOptions } from "@refinedev/core";
+import { useDataProvider, useGetIdentity, useLink, useRefineOptions } from "@refinedev/core";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router";
 
 import {
@@ -13,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { preloadRoute } from "@/lib/route-preload";
+import { preloadRouteData } from "@/lib/route-data-preload";
 import {
   NAVIGATION_CONFIG,
   type NavigationGroupConfig,
@@ -24,6 +26,8 @@ import type { User } from "@/types";
 export function Sidebar() {
   const { open, isMobile, setOpenMobile } = useShadcnSidebar();
   const location = useLocation();
+  const dataProvider = useDataProvider()();
+  const queryClient = useQueryClient();
   const { data: identity } = useGetIdentity<User>();
   const role = (identity?.role ?? NAVIGATION_CONFIG.defaultRole) as NavigationRole;
   const [pendingRoute, setPendingRoute] = useState<string>();
@@ -32,13 +36,19 @@ export function Sidebar() {
     setPendingRoute(undefined);
   }, [location.pathname]);
 
+  const handleRouteIntent = useCallback((route: string) => {
+    preloadRoute(route);
+    preloadRouteData(route, { dataProvider, queryClient });
+  }, [dataProvider, queryClient]);
+
   const handleNavigation = useCallback((route: string) => {
+    handleRouteIntent(route);
     setPendingRoute(route);
 
     if (isMobile) {
       setOpenMobile(false);
     }
-  }, [isMobile, setOpenMobile]);
+  }, [handleRouteIntent, isMobile, setOpenMobile]);
 
   const groups = useMemo(
     () =>
@@ -78,6 +88,7 @@ export function Sidebar() {
           item={NAVIGATION_CONFIG.dashboard}
           pendingRoute={pendingRoute}
           onNavigate={handleNavigation}
+          onRouteIntent={handleRouteIntent}
         />
         {groups.map((group) => (
           <NavigationGroup
@@ -85,6 +96,7 @@ export function Sidebar() {
             group={group}
             pendingRoute={pendingRoute}
             onNavigate={handleNavigation}
+            onRouteIntent={handleRouteIntent}
           />
         ))}
       </ShadcnSidebarContent>
@@ -96,9 +108,10 @@ type NavigationGroupProps = {
   group: NavigationGroupConfig;
   pendingRoute?: string;
   onNavigate: (route: string) => void;
+  onRouteIntent: (route: string) => void;
 };
 
-function NavigationGroup({ group, pendingRoute, onNavigate }: NavigationGroupProps) {
+function NavigationGroup({ group, pendingRoute, onNavigate, onRouteIntent }: NavigationGroupProps) {
   const { open } = useShadcnSidebar();
 
   return (
@@ -132,6 +145,7 @@ function NavigationGroup({ group, pendingRoute, onNavigate }: NavigationGroupPro
             item={item}
             pendingRoute={pendingRoute}
             onNavigate={onNavigate}
+            onRouteIntent={onRouteIntent}
           />
         ))}
       </div>
@@ -143,9 +157,10 @@ type NavigationLinkProps = {
   item: NavigationItemConfig;
   pendingRoute?: string;
   onNavigate: (route: string) => void;
+  onRouteIntent: (route: string) => void;
 };
 
-function NavigationLink({ item, pendingRoute, onNavigate }: NavigationLinkProps) {
+function NavigationLink({ item, pendingRoute, onNavigate, onRouteIntent }: NavigationLinkProps) {
   const Link = useLink();
   const location = useLocation();
   const { open } = useShadcnSidebar();
@@ -179,9 +194,9 @@ function NavigationLink({ item, pendingRoute, onNavigate }: NavigationLinkProps)
     >
       <Link
         to={item.route}
-        onPointerEnter={() => preloadRoute(item.route)}
-        onPointerDown={() => preloadRoute(item.route)}
-        onFocus={() => preloadRoute(item.route)}
+        onPointerEnter={() => onRouteIntent(item.route)}
+        onPointerDown={() => onRouteIntent(item.route)}
+        onFocus={() => onRouteIntent(item.route)}
         onClick={() => onNavigate(item.route)}
         aria-current={isSelected ? "page" : undefined}
         aria-label={!open ? item.label : undefined}

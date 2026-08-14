@@ -52,6 +52,9 @@ export const API_RESPONSE_POLICY = {
 
 export const API_ENDPOINTS = {
   DASHBOARD_STATS: "/stats/dashboard",
+  CLASSES: {
+    LIST: "classes",
+  },
   MY_WEEK: "/calendar/my-week",
   ACADEMIC_RECORDS: {
     LIST: "/gradebook",
@@ -350,6 +353,10 @@ export const PERFORMANCE_CONFIG = {
   resourcePageSize: 24,
   queryStaleTimeMs: 15_000,
   queryGarbageCollectionTimeMs: 300_000,
+  routeDataPrefetch: {
+    enabled: true,
+    classesPageSize: 10,
+  },
 } as const;
 
 export const UI_TOKENS = {
