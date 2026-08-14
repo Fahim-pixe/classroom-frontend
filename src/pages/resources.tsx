@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetIdentity } from "@refinedev/core";
 import { API_ENDPOINTS, BACKEND_BASE_URL, PERFORMANCE_CONFIG, STORAGE_CLIENT_CONFIG, UI_TOKENS } from "@/constants";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
 import { ResourcesListSkeleton } from "@/components/resources/resources-list-skeleton";
 
 type Resource = {
@@ -81,8 +82,9 @@ export default function Resources() {
     filters,
   });
   const { result: classesResult } = useList<any>({ resource: "classes", pagination: { mode: "off" } });
-  const { mutate: createResource, mutation } = useCreate();
-  const { mutate: updateFavorite } = useCustomMutation();
+  const { mutateAsync: createResource, mutation: createResourceMutation } = useCreate();
+  const { mutateAsync: updateFavorite, mutation: favoriteMutation } = useCustomMutation();
+  const { execute } = useMutationFeedback();
   const resources: Resource[] = resourceResult.data ?? [];
   const resourceTotal = resourceResult.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(resourceTotal / PERFORMANCE_CONFIG.resourcePageSize));
@@ -101,7 +103,9 @@ export default function Resources() {
     let storageAssetId: string | undefined;
 
     try {
-      if (selectedFile) {
+      await execute({
+        action: async () => {
+          if (selectedFile) {
         if (!Number.isInteger(Number(classId)) || Number(classId) < 1) {
           throw new Error("Select a class before uploading a resource");
         }
@@ -143,30 +147,44 @@ export default function Resources() {
         if (!confirmationResponse.ok || !confirmationPayload.data?.id) {
           throw new Error(confirmationPayload.error || "Uploaded file could not be verified");
         }
-        storageAssetId = confirmationPayload.data.id;
-      }
+            storageAssetId = confirmationPayload.data.id;
+          }
 
-      if (!finalResourceUrl && !storageAssetId) throw new Error("Add a resource URL or choose a document to upload");
-      createResource(
-        { resource: "resources", values: { classId: Number(classId), title, description, category: createCategory, resourceUrl: finalResourceUrl || undefined, storageAssetId, mimeType: selectedFile?.type, fileSizeBytes: selectedFile?.size, isPublished: true } },
-        {
-          onSuccess: () => {
-            setShowCreate(false);
-            setClassId(""); setTitle(""); setDescription(""); setResourceUrl(""); setSelectedFile(null);
-            refetch();
-          },
-        }
-      );
+          if (!finalResourceUrl && !storageAssetId) throw new Error("Add a resource URL or choose a document to upload");
+          return createResource({ resource: "resources", values: { classId: Number(classId), title, description, category: createCategory, resourceUrl: finalResourceUrl || undefined, storageAssetId, mimeType: selectedFile?.type, fileSizeBytes: selectedFile?.size, isPublished: true } });
+        },
+        labels: {
+          pending: "Publishing material…",
+          success: "Material published",
+          successDescription: "The resource is now available to the class.",
+          error: "Unable to publish material",
+          errorDescription: "Please review the resource details and try again.",
+        },
+        onSuccess: async () => {
+          setShowCreate(false);
+          setClassId(""); setTitle(""); setDescription(""); setResourceUrl(""); setSelectedFile(null);
+          await refetch();
+        },
+      });
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Upload failed");
     }
   };
 
-  const toggleFavorite = (resource: Resource) => {
-    updateFavorite(
-      { url: `resources/${resource.id}/favorite`, method: "post", values: {} },
-      { onSuccess: () => refetch() }
-    );
+  const toggleFavorite = async (resource: Resource) => {
+    try {
+      await execute({
+        action: () => updateFavorite({ url: `resources/${resource.id}/favorite`, method: "post", values: {} }),
+        labels: resource.isFavorite
+          ? { pending: "Removing saved resource…", success: "Resource removed", successDescription: "The material is no longer in your saved resources.", error: "Unable to remove saved resource", errorDescription: "Please try again." }
+          : { pending: "Saving resource…", success: "Resource saved", successDescription: "The material is available in Saved Resources.", error: "Unable to save resource", errorDescription: "Please try again." },
+        onSuccess: async () => {
+          await refetch();
+        },
+      });
+    } catch {
+      // The shared feedback layer has already announced the failure and retry action.
+    }
   };
 
   const openResource = async (resource: Resource) => {
@@ -209,7 +227,7 @@ export default function Resources() {
         <select value={createCategory} onChange={(event) => setCreateCategory(event.target.value)} className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm">{Object.entries(categoryLabels).filter(([key]) => key !== "all").map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
         <Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Short description (optional)" className="md:col-span-2" />
         {uploadError && <p className="text-sm text-destructive md:col-span-2">{uploadError}</p>}
-        <div className="flex gap-3 md:col-span-2"><Button type="submit" disabled={mutation.isPending} className="rounded-xl bg-violet-600 hover:bg-violet-700">{mutation.isPending ? "Saving…" : "Save material"}</Button><Button type="button" variant="outline" onClick={() => setShowCreate(false)} className="rounded-xl">Cancel</Button></div>
+        <div className="flex gap-3 md:col-span-2"><Button type="submit" disabled={createResourceMutation.isPending} className="rounded-xl bg-violet-600 hover:bg-violet-700">{createResourceMutation.isPending ? "Saving…" : "Save material"}</Button><Button type="button" variant="outline" onClick={() => setShowCreate(false)} className="rounded-xl">Cancel</Button></div>
       </form></CardContent></Card>}
 
       <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center">
@@ -219,7 +237,7 @@ export default function Resources() {
 
       {isError && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Resources could not be loaded. Check that the latest backend migration is deployed, then refresh.</div>}
       {!isLoading && !isError && resourceTotal > 0 && <div className="flex flex-col justify-between gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center"><span>Showing {rangeStart}–{rangeEnd} of {resourceTotal} materials</span><div className="flex gap-2"><Button type="button" variant="outline" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>Previous</Button><Button type="button" variant="outline" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage >= totalPages}>Next</Button></div></div>}
-      {isLoading ? <ResourcesListSkeleton /> : resources.length === 0 ? <Card className="rounded-2xl border-dashed border-slate-300 bg-slate-50"><CardContent className="flex flex-col items-center py-16 text-center"><BookOpen className="h-10 w-10 text-violet-400" /><h2 className="mt-4 text-lg font-semibold text-slate-900">No materials yet</h2><p className="mt-2 max-w-md text-sm text-slate-500">When a teacher adds a resource to one of your classes, it will appear here.</p></CardContent></Card> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{resources.map((resource) => <Card key={resource.id} className="rounded-2xl border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><CardContent className="p-5"><div className="flex items-start justify-between gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">{resourceIcon(resource)}</div><IconButton variant="ghost" onClick={() => toggleFavorite(resource)} aria-label={resource.isFavorite ? "Remove from saved" : "Save resource"} className={resource.isFavorite ? "text-rose-500 hover:text-rose-600" : "text-muted-foreground hover:text-rose-500"}><Heart className="h-5 w-5" fill={resource.isFavorite ? "currentColor" : "none"} /></IconButton></div><p className="mt-5 text-xs font-semibold uppercase tracking-wide text-violet-600">{resource.subjectName} · {resource.className}</p><h2 className="mt-2 line-clamp-2 text-lg font-semibold text-slate-900">{resource.title}</h2><p className="mt-2 line-clamp-2 min-h-10 text-sm text-slate-500">{resource.description || "Course material"}</p><div className="mt-5 flex items-center justify-between"><span className="text-xs text-slate-400">{categoryLabels[resource.category] || "Material"}</span><Button variant="outline" onClick={() => openResource(resource)} className="h-9 rounded-lg px-3 text-xs"><ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Open</Button></div></CardContent></Card>)}</div>}
+      {isLoading ? <ResourcesListSkeleton /> : resources.length === 0 ? <Card className="rounded-2xl border-dashed border-slate-300 bg-slate-50"><CardContent className="flex flex-col items-center py-16 text-center"><BookOpen className="h-10 w-10 text-violet-400" /><h2 className="mt-4 text-lg font-semibold text-slate-900">No materials yet</h2><p className="mt-2 max-w-md text-sm text-slate-500">When a teacher adds a resource to one of your classes, it will appear here.</p></CardContent></Card> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{resources.map((resource) => <Card key={resource.id} className="rounded-2xl border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><CardContent className="p-5"><div className="flex items-start justify-between gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">{resourceIcon(resource)}</div><IconButton variant="ghost" onClick={() => void toggleFavorite(resource)} disabled={favoriteMutation.isPending} aria-pressed={resource.isFavorite} aria-label={resource.isFavorite ? "Remove from saved" : "Save resource"} className={resource.isFavorite ? "text-rose-500 hover:text-rose-600" : "text-muted-foreground hover:text-rose-500"}><Heart className="h-5 w-5" fill={resource.isFavorite ? "currentColor" : "none"} /></IconButton></div><p className="mt-5 text-xs font-semibold uppercase tracking-wide text-violet-600">{resource.subjectName} · {resource.className}</p><h2 className="mt-2 line-clamp-2 text-lg font-semibold text-slate-900">{resource.title}</h2><p className="mt-2 line-clamp-2 min-h-10 text-sm text-slate-500">{resource.description || "Course material"}</p><div className="mt-5 flex items-center justify-between"><span className="text-xs text-slate-400">{categoryLabels[resource.category] || "Material"}</span><Button variant="outline" onClick={() => openResource(resource)} className="h-9 rounded-lg px-3 text-xs"><ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Open</Button></div></CardContent></Card>)}</div>}
     </div>
   );
 }

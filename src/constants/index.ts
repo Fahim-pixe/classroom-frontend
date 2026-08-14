@@ -391,6 +391,10 @@ export const UI_TOKENS = {
   },
 } as const;
 
+export const MUTATION_FEEDBACK_CONFIG = {
+  retryLabel: "Retry",
+} as const;
+
 export const DASHBOARD_ANALYTICS_DELIVERY_POLICY = {
   visibilityGatingEnabled: true,
   compactMobileSummaryEnabled: true,

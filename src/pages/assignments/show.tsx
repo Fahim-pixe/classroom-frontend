@@ -12,6 +12,7 @@ import { AssignmentDetailSkeleton } from "@/components/assignments/assignment-de
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useNotificationProvider } from "@/components/refine-ui/notification/use-notification-provider";
 import { Assignment, StorageUploadValue, Submission, User } from "@/types";
+import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
 
 const AssignmentsShow = () => {
   const { id } = useParams();
@@ -43,45 +44,74 @@ const AssignmentsShow = () => {
   const [gradeInput, setGradeInput] = useState<number | "">("");
   const [feedbackInput, setFeedbackInput] = useState("");
 
-  const { mutate: submitWork, mutation: submitMutation } = useCustomMutation();
-    const { mutate: gradeWork, mutation: gradeMutation } = useCustomMutation();
+  const { mutateAsync: submitWork, mutation: submitMutation } = useCustomMutation();
+  const { mutateAsync: gradeWork, mutation: gradeMutation } = useCustomMutation();
+  const { execute } = useMutationFeedback();
 
-    const isSubmitting = submitMutation.isPending;
-    const isGrading = gradeMutation.isPending;
+  const isSubmitting = submitMutation.isPending;
+  const isGrading = gradeMutation.isPending;
 
-  const handleStudentSubmit = () => {
+  const handleStudentSubmit = async () => {
     const finalContent = submissionText.trim();
     if (!finalContent) return notify?.({ type: "error", message: "Submission cannot be empty." });
 
-    submitWork({
-      url: `assignments/${id}/submissions`,
-      method: "post",
-      values: {
-        content: finalContent,
-        attachmentAssetId: submissionFile?.assetId,
-        attachmentName: submissionFile?.fileName,
-        attachmentMimeType: submissionFile?.mimeType,
-        attachmentSizeBytes: submissionFile?.fileSizeBytes,
-      }
-    }, {
-      onSuccess: () => {
-        notify?.({ type: "success", message: "Assignment submitted successfully!" });
-        studentSubQuery.refetch();
-      }
-    });
+    try {
+      await execute({
+        action: () => submitWork({
+          url: `assignments/${id}/submissions`,
+          method: "post",
+          values: {
+            content: finalContent,
+            attachmentAssetId: submissionFile?.assetId,
+            attachmentName: submissionFile?.fileName,
+            attachmentMimeType: submissionFile?.mimeType,
+            attachmentSizeBytes: submissionFile?.fileSizeBytes,
+          },
+        }),
+        labels: {
+          pending: "Submitting assignment…",
+          success: "Assignment submitted",
+          successDescription: "Your instructor can now review your work.",
+          error: "Unable to submit assignment",
+          errorDescription: "Please check your connection and try again.",
+        },
+        onSuccess: async () => {
+          await studentSubQuery.refetch();
+        },
+      });
+    } catch {
+      // The shared feedback layer has already announced the failure and retry action.
+    }
   };
 
-  const handleGrading = (submissionId: number) => {
-    gradeWork({
-      url: `assignments/${id}/submissions/${submissionId}`,
-      method: "patch",
-      values: { grade: Number(gradeInput), feedback: feedbackInput }
-    }, {
-      onSuccess: () => {
-        notify?.({ type: "success", message: "Grade saved successfully!" });
-        teacherSubQuery.refetch();
-      }
-    });
+  const handleGrading = async (submissionId: number) => {
+    const grade = Number(gradeInput);
+    if (!Number.isFinite(grade) || grade < 0 || grade > Number(assignment?.maxPoints ?? 0)) {
+      notify?.({ type: "error", message: "Enter a valid score within the assignment point range." });
+      return;
+    }
+
+    try {
+      await execute({
+        action: () => gradeWork({
+          url: `assignments/${id}/submissions/${submissionId}`,
+          method: "patch",
+          values: { grade, feedback: feedbackInput },
+        }),
+        labels: {
+          pending: "Saving grade…",
+          success: "Grade saved",
+          successDescription: "The submission has been updated.",
+          error: "Unable to save grade",
+          errorDescription: "Please check the score and try again.",
+        },
+        onSuccess: async () => {
+          await teacherSubQuery.refetch();
+        },
+      });
+    } catch {
+      // The shared feedback layer has already announced the failure and retry action.
+    }
   };
 
   if (query.isLoading) return <AssignmentDetailSkeleton />;
@@ -143,7 +173,7 @@ const AssignmentsShow = () => {
                       />
                     ) : null}
                   </div>
-                  <Button onClick={handleStudentSubmit} disabled={isSubmitting} className="w-full">
+                  <Button onClick={() => void handleStudentSubmit()} disabled={isSubmitting} className="w-full">
                     {isSubmitting ? "Submitting..." : "Turn In Assignment"}
                   </Button>
                 </>
@@ -190,7 +220,7 @@ const AssignmentsShow = () => {
                               <p className="text-sm font-medium mb-1">Feedback</p>
                               <Textarea value={feedbackInput} onChange={e => setFeedbackInput(e.target.value)} />
                             </div>
-                            <Button className="w-full" onClick={() => handleGrading(sub.id)} disabled={isGrading}>
+                            <Button className="w-full" onClick={() => void handleGrading(sub.id)} disabled={isGrading}>
                               {isGrading ? "Saving..." : "Save Grade"}
                             </Button>
                           </div>

@@ -19,6 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import type { User } from "@/types";
+import { ROUTES } from "@/constants";
+import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
 
 const joinSchema = z.object({
   inviteCode: z.string().min(3, "Invite code is required"),
@@ -34,6 +36,7 @@ const EnrollmentsJoin = () => {
   } = useCreate();
   const { data: currentUser } = useGetIdentity<User>();
   const { open: notify } = useNotification();
+  const { execute } = useMutationFeedback();
 
   const form = useForm<JoinFormValues>({
     resolver: zodResolver(joinSchema),
@@ -64,31 +67,31 @@ const EnrollmentsJoin = () => {
     }
 
     try {
-      const response = await joinEnrollment({
-        resource: "enrollments/join",
-        values: {
-          inviteCode: normalizedInviteCode,
-          studentId: currentUser.id,
+      await execute({
+        action: () => joinEnrollment({
+          resource: "enrollments/join",
+          values: {
+            inviteCode: normalizedInviteCode,
+            studentId: currentUser.id,
+          },
+        }),
+        labels: {
+          pending: "Joining class…",
+          success: "Class joined",
+          successDescription: "The class has been added to your enrollments.",
+          error: "Unable to join class",
+          errorDescription: "Check the invite code and try again.",
+        },
+        onSuccess: (response) => {
+          navigate(ROUTES.ENROLLMENTS.CONFIRM, {
+            state: {
+              enrollment: response?.data,
+            },
+          });
         },
       });
-
-      notify?.({
-        type: "success",
-        message: "Class joined successfully",
-        description: "The class has been added to your enrollments.",
-      });
-
-      navigate("/enrollments/confirm", {
-        state: {
-          enrollment: response?.data,
-        },
-      });
-    } catch (error) {
-      notify?.({
-        type: "error",
-        message: "Unable to join class",
-        description: error instanceof Error ? error.message : "Check the invite code and try again.",
-      });
+    } catch {
+      // The shared feedback layer has already announced the failure and retry action.
     }
   };
 

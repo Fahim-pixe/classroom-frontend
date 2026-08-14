@@ -28,6 +28,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ClassDetails, User } from "@/types";
+import { ROUTES } from "@/constants";
+import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
 
 const enrollSchema = z.object({
   classId: z.coerce.number().min(1, "Class is required"),
@@ -43,6 +45,7 @@ const EnrollmentsCreate = () => {
   } = useCreate();
   const { data: currentUser } = useGetIdentity<User>();
   const { open: notify } = useNotification();
+  const { execute } = useMutationFeedback();
 
   const { query: classesQuery } = useList<ClassDetails>({
     resource: "classes",
@@ -94,31 +97,31 @@ const EnrollmentsCreate = () => {
     }
 
     try {
-      const response = await createEnrollment({
-        resource: "enrollments",
-        values: {
-          classId: values.classId,
-          studentId: currentUser.id,
+      await execute({
+        action: () => createEnrollment({
+          resource: "enrollments",
+          values: {
+            classId: values.classId,
+            studentId: currentUser.id,
+          },
+        }),
+        labels: {
+          pending: "Enrolling in class…",
+          success: "Enrollment successful",
+          successDescription: `You are now enrolled in ${classToEnroll.name}.`,
+          error: "Enrollment failed",
+          errorDescription: "Please check your connection and try again.",
+        },
+        onSuccess: (response) => {
+          navigate(ROUTES.ENROLLMENTS.CONFIRM, {
+            state: {
+              enrollment: response?.data,
+            },
+          });
         },
       });
-
-      notify?.({
-        type: "success",
-        message: "Enrollment successful",
-        description: `You are now enrolled in ${classToEnroll.name}.`,
-      });
-
-      navigate("/enrollments/confirm", {
-        state: {
-          enrollment: response?.data,
-        },
-      });
-    } catch (error) {
-      notify?.({
-        type: "error",
-        message: "Enrollment failed",
-        description: error instanceof Error ? error.message : "Please try again.",
-      });
+    } catch {
+      // The shared feedback layer has already announced the failure and retry action.
     }
   };
 

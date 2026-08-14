@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { AttendanceRosterSkeleton } from "@/components/attendance/attendance-roster-skeleton";
 import { API_ENDPOINTS } from "@/constants";
 import type { User } from "@/types";
+import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
 
 type AttendanceMark = "present" | "absent" | "late" | "excused";
 type AttendanceClass = { id: number; name: string; subjectCode: string };
@@ -44,7 +45,8 @@ const AttendanceCreate = () => {
   });
   const students = useMemo(() => rosterQuery.data?.data || [], [rosterQuery.data?.data]);
 
-  const { mutate: createAttendance, mutation } = useCreate();
+  const { mutateAsync: createAttendance, mutation } = useCreate();
+  const { execute } = useMutationFeedback();
   const isPending = mutation.isPending;
 
   // Automatically mark everyone present when a new roster loads
@@ -62,7 +64,7 @@ const AttendanceCreate = () => {
     setRosterMarks(prev => ({ ...prev, [studentId]: mark }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedClassId) return notify?.({ type: "error", message: "Please select a class." });
     if (students.length === 0) return notify?.({ type: "error", message: "No students in this class to mark." });
 
@@ -72,20 +74,31 @@ const AttendanceCreate = () => {
       note: ""
     }));
 
-    createAttendance({
-      resource: API_ENDPOINTS.ATTENDANCE.SESSIONS,
-      values: {
-        classId: Number(selectedClassId),
-        sessionDate: new Date(sessionDate).toISOString(),
-        notes: sessionNotes,
-        records
-      }
-    }, {
-      onSuccess: () => {
-        notify?.({ type: "success", message: "Attendance session saved successfully!" });
-        back();
-      }
-    });
+    try {
+      await execute({
+        action: () => createAttendance({
+          resource: API_ENDPOINTS.ATTENDANCE.SESSIONS,
+          values: {
+            classId: Number(selectedClassId),
+            sessionDate: new Date(sessionDate).toISOString(),
+            notes: sessionNotes,
+            records,
+          },
+        }),
+        labels: {
+          pending: "Saving attendance…",
+          success: "Attendance saved",
+          successDescription: "The session has been recorded for this class.",
+          error: "Unable to save attendance",
+          errorDescription: "Please check the session details and try again.",
+        },
+        onSuccess: () => {
+          back();
+        },
+      });
+    } catch {
+      // The shared feedback layer has already announced the failure and retry action.
+    }
   };
 
   const getInitials = (name = "") => name.substring(0, 2).toUpperCase();
@@ -176,7 +189,7 @@ const AttendanceCreate = () => {
                   </div>
                 ))}
                 <div className="pt-6">
-                  <Button onClick={handleSubmit} disabled={isPending} size="lg" className="w-full">
+                  <Button onClick={() => void handleSubmit()} disabled={isPending} size="lg" className="w-full">
                     {isPending ? "Saving Session..." : "Save Attendance Session"}
                   </Button>
                 </div>

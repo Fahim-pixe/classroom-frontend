@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { API_ENDPOINTS, ROUTES } from "@/constants";
 import { getRoutePrefetchedData } from "@/lib/route-data-preload";
 import type { GradebookEntry, User } from "@/types";
+import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
 
 type AcademicClass = {
   id: number;
@@ -91,7 +92,8 @@ const GradeAssessmentsPage = () => {
   const gradesPayload = gradesQuery.data?.data as GradebookPayload | GradebookEntry[] | undefined;
   const grades = Array.isArray(gradesPayload) ? gradesPayload : gradesPayload?.data ?? [];
 
-  const { mutate: createGrade, mutation } = useCustomMutation();
+  const { mutateAsync: createGrade, mutation } = useCustomMutation();
+  const { execute } = useMutationFeedback();
 
   const clearForm = () => {
     setStudentId("");
@@ -101,7 +103,7 @@ const GradeAssessmentsPage = () => {
     setFeedback("");
   };
 
-  const submitGrade = () => {
+  const submitGrade = async () => {
     const earnedPoints = Number(points);
     const totalPoints = Number(maxPoints);
 
@@ -115,27 +117,35 @@ const GradeAssessmentsPage = () => {
       return;
     }
 
-    createGrade(
-      {
-        url: API_ENDPOINTS.ACADEMIC_RECORDS.LIST,
-        method: "post",
-        values: {
-          classId: Number(activeClassId),
-          studentId,
-          title: title.trim(),
-          points: earnedPoints,
-          maxPoints: totalPoints,
-          feedback: feedback.trim() || null,
+    try {
+      await execute({
+        action: () => createGrade({
+          url: API_ENDPOINTS.ACADEMIC_RECORDS.LIST,
+          method: "post",
+          values: {
+            classId: Number(activeClassId),
+            studentId,
+            title: title.trim(),
+            points: earnedPoints,
+            maxPoints: totalPoints,
+            feedback: feedback.trim() || null,
+          },
+        }),
+        labels: {
+          pending: "Recording assessment…",
+          success: "Assessment recorded",
+          successDescription: "The student’s academic record has been updated.",
+          error: "Unable to record assessment",
+          errorDescription: "Please review the assessment details and try again.",
         },
-      },
-      {
-        onSuccess: () => {
+        onSuccess: async () => {
           clearForm();
-          notify?.({ type: "success", message: "Assessment grade recorded." });
-          gradesQuery.query.refetch();
+          await gradesQuery.query.refetch();
         },
-      },
-    );
+      });
+    } catch {
+      // The shared feedback layer has already announced the failure and retry action.
+    }
   };
 
   return (
@@ -210,7 +220,7 @@ const GradeAssessmentsPage = () => {
                 <label className="text-sm font-medium" htmlFor="grade-feedback">Feedback</label>
                 <Textarea id="grade-feedback" value={feedback} onChange={(event) => setFeedback(event.target.value)} placeholder="Optional feedback for the student" maxLength={5000} />
               </div>
-              <Button className="w-full sm:w-auto" onClick={submitGrade} disabled={mutation.isPending || rosterQuery.isLoading || students.length === 0}>
+              <Button className="w-full sm:w-auto" onClick={() => void submitGrade()} disabled={mutation.isPending || rosterQuery.isLoading || students.length === 0}>
                 <ClipboardCheck className="h-(--icon-size-button) w-(--icon-size-button)" aria-hidden="true" />
                 {mutation.isPending ? "Recording assessment…" : "Record assessment"}
               </Button>

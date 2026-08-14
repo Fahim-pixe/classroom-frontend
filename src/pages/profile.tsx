@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useGetIdentity, useNotification, useUpdate } from "@refinedev/core";
+import { useGetIdentity, useUpdate } from "@refinedev/core";
 import { z } from "zod";
 import {
   CalendarDays,
@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { UploadWidgetValue, User } from "@/types";
 import { CONTEXTUAL_NAVIGATION, ROUTES } from "@/constants";
+import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
 
 const profileSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(120, "Name is too long"),
@@ -57,8 +58,8 @@ const Profile = () => {
     isLoading,
     refetch: refetchIdentity,
   } = useGetIdentity<User>();
-  const { open: notify } = useNotification();
   const { mutateAsync: updateUser, mutation } = useUpdate<User>();
+  const { execute } = useMutationFeedback();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
   const [imageValue, setImageValue] = useState<UploadWidgetValue | null>(null);
@@ -106,33 +107,34 @@ const Profile = () => {
     }
 
     try {
-      await updateUser({
-        resource: "users",
-        id: user.id,
-        values: {
-          name: parsed.data.name,
-          image: imageValue?.assetId ? user.image ?? null : imageValue?.url ?? null,
-          imageCldPubId: imageValue?.assetId ? null : imageValue?.publicId ?? null,
-          imageStorageAssetId: imageValue?.assetId ?? (imageValue ? undefined : null),
+      await execute({
+        action: () => updateUser({
+          resource: "users",
+          id: user.id,
+          values: {
+            name: parsed.data.name,
+            image: imageValue?.assetId ? user.image ?? null : imageValue?.url ?? null,
+            imageCldPubId: imageValue?.assetId ? null : imageValue?.publicId ?? null,
+            imageStorageAssetId: imageValue?.assetId ?? (imageValue ? undefined : null),
+          },
+          meta: {
+            method: "put",
+          },
+        }),
+        labels: {
+          pending: "Saving profile…",
+          success: "Profile updated",
+          successDescription: "Your profile information has been saved.",
+          error: "Unable to update profile",
+          errorDescription: "Please try again.",
         },
-        meta: {
-          method: "put",
+        onSuccess: async () => {
+          await refetchIdentity();
+          setIsEditing(false);
         },
       });
-
-      await refetchIdentity();
-      setIsEditing(false);
-      notify?.({
-        type: "success",
-        message: "Profile updated",
-        description: "Your profile information has been saved.",
-      });
-    } catch (error) {
-      notify?.({
-        type: "error",
-        message: "Unable to update profile",
-        description: error instanceof Error ? error.message : "Please try again.",
-      });
+    } catch {
+      // The shared feedback layer has already announced the failure and retry action.
     }
   };
 
