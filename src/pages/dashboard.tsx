@@ -20,7 +20,7 @@ import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { DeferredAdminDashboardAnalytics } from "@/components/dashboard/deferred-admin-dashboard-analytics";
 import type { Assignment, User } from "@/types";
 import { UserRole } from "@/types";
-import { API_ENDPOINTS, ROUTES } from "@/constants";
+import { API_ENDPOINTS, PRODUCTIVITY_REPORTING_CONFIG, ROUTES } from "@/constants";
 import { getRoutePrefetchedData } from "@/lib/route-data-preload";
 
 const TeacherDashboard = lazy(() => import("@/pages/teacher-dashboard"));
@@ -56,6 +56,14 @@ type DashboardPayload = {
   todaySchedule?: ScheduleItem[];
   upcomingAssignments?: Assignment[];
   recentAnnouncements?: AnnouncementItem[];
+  productivity?: {
+    subjectDistribution?: Array<{ departmentName?: string; subjects?: number | string }>;
+    atRiskStudents?: Array<{ id: string; name?: string | null; attendanceRate?: number; attendanceRecords?: number }>;
+    assignmentCompletionByClass?: Array<{ classId: number; className: string; expectedSubmissions?: number; completedSubmissions?: number; completionRate?: number }>;
+    attendanceByClass?: Array<{ classId: number; className: string; recordedSessions?: number; attendanceRate?: number }>;
+    progressByClass?: Array<{ classId: number; className: string; releasedEntries?: number; progressPercent?: number }>;
+    upcomingDeadlineSummary?: { dueInWindow?: number; nextDueAt?: string | null };
+  };
 };
 
 type DashboardApiResponse = DashboardPayload & { data?: DashboardPayload };
@@ -173,6 +181,12 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
   const monthlyData = Array.isArray(dashboard.enrollmentTrend)
     ? dashboard.enrollmentTrend.map((entry: EnrollmentTrendEntry) => ({ month: entry.month, current: toNumber(entry.totalStudents ?? entry.newEnrollments), average: toNumber(entry.newEnrollments) }))
     : [];
+  const subjectDistribution = Array.isArray(dashboard.productivity?.subjectDistribution)
+    ? dashboard.productivity.subjectDistribution
+    : [];
+  const atRiskStudents = Array.isArray(dashboard.productivity?.atRiskStudents)
+    ? dashboard.productivity.atRiskStudents
+    : [];
 
   return (
     <div className="min-h-full bg-background px-1 pb-10 text-foreground sm:px-2">
@@ -217,6 +231,46 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
 
       <DeferredAdminDashboardAnalytics donutData={donutData} monthlyData={monthlyData} />
 
+      <section className="mt-6 grid gap-6 xl:grid-cols-2">
+        <Card className="shadow-sm">
+          <CardHeader><CardTitle>{PRODUCTIVITY_REPORTING_CONFIG.admin.subjectDistributionTitle}</CardTitle></CardHeader>
+          <CardContent>
+            {subjectDistribution.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{PRODUCTIVITY_REPORTING_CONFIG.admin.noSubjectDistribution}</p>
+            ) : (
+              <div className="space-y-3">
+                {subjectDistribution.map((item) => (
+                  <div key={`${item.departmentName}-${item.subjects}`} className="flex items-center justify-between gap-4 border-b border-border pb-3 last:border-0 last:pb-0">
+                    <p className="min-w-0 truncate text-sm font-medium text-foreground">{item.departmentName || PRODUCTIVITY_REPORTING_CONFIG.admin.unassignedDepartment}</p>
+                    <Badge variant="secondary" className="shrink-0">{toNumber(item.subjects)} {PRODUCTIVITY_REPORTING_CONFIG.admin.subjectUnit}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle>{PRODUCTIVITY_REPORTING_CONFIG.admin.atRiskStudentsTitle}</CardTitle>
+            <p className="text-sm text-muted-foreground">{PRODUCTIVITY_REPORTING_CONFIG.admin.atRiskStudentsDescription}</p>
+          </CardHeader>
+          <CardContent>
+            {atRiskStudents.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{PRODUCTIVITY_REPORTING_CONFIG.admin.noAtRiskStudents}</p>
+            ) : (
+              <div className="space-y-3">
+                {atRiskStudents.map((student) => (
+                  <div key={student.id} className="flex items-center justify-between gap-4 border-b border-border pb-3 last:border-0 last:pb-0">
+                    <div className="min-w-0"><p className="truncate text-sm font-medium text-foreground">{student.name || PRODUCTIVITY_REPORTING_CONFIG.admin.unnamedStudent}</p><p className="text-xs text-muted-foreground">{toNumber(student.attendanceRecords)} {PRODUCTIVITY_REPORTING_CONFIG.admin.attendanceRecordsUnit}</p></div>
+                    <Badge variant="destructive" className="shrink-0">{toNumber(student.attendanceRate)}%</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
       <Card className="mt-6 shadow-sm">
         <CardHeader><CardTitle>Recent activity</CardTitle></CardHeader>
         <CardContent>
@@ -254,6 +308,10 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
   const schedule = Array.isArray(dashboard.todaySchedule) ? dashboard.todaySchedule : [];
   const assignments = Array.isArray(dashboard.upcomingAssignments) ? dashboard.upcomingAssignments : [];
   const announcements = Array.isArray(dashboard.recentAnnouncements) ? dashboard.recentAnnouncements : [];
+  const progressByClass = Array.isArray(dashboard.productivity?.progressByClass)
+    ? dashboard.productivity.progressByClass
+    : [];
+  const upcomingDeadlineSummary = dashboard.productivity?.upcomingDeadlineSummary;
   const firstName = currentUser?.name?.split(" ")[0] || "there";
 
   if (isLoading) return <DashboardSkeleton variant="student" />;
@@ -360,6 +418,41 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4 border-b border-border"><CardTitle className="text-xl">{PRODUCTIVITY_REPORTING_CONFIG.student.progressTitle}</CardTitle></CardHeader>
+          <CardContent className="pt-6">
+            {progressByClass.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{PRODUCTIVITY_REPORTING_CONFIG.student.noProgress}</p>
+            ) : (
+              <div className="space-y-4">
+                {progressByClass.map((progress) => (
+                  <div key={progress.classId} className="space-y-2 border-b border-border pb-4 last:border-0 last:pb-0">
+                    <div className="flex items-center justify-between gap-3"><p className="min-w-0 truncate text-sm font-medium text-foreground">{progress.className}</p><Badge variant="secondary" className="shrink-0">{toNumber(progress.progressPercent)}% {PRODUCTIVITY_REPORTING_CONFIG.student.completionSuffix}</Badge></div>
+                    <progress className="h-2 w-full overflow-hidden" value={toNumber(progress.progressPercent)} max={PRODUCTIVITY_REPORTING_CONFIG.student.progressMaximumPercent} aria-label={`${progress.className} ${PRODUCTIVITY_REPORTING_CONFIG.student.progressTitle}`} />
+                    <p className="text-xs text-muted-foreground">{toNumber(progress.releasedEntries)} {PRODUCTIVITY_REPORTING_CONFIG.student.releasedEntriesUnit}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4 border-b border-border"><CardTitle className="text-xl">{PRODUCTIVITY_REPORTING_CONFIG.student.deadlineTitle}</CardTitle></CardHeader>
+          <CardContent className="pt-6">
+            {toNumber(upcomingDeadlineSummary?.dueInWindow) === 0 ? (
+              <p className="text-sm text-muted-foreground">{PRODUCTIVITY_REPORTING_CONFIG.student.noDeadline}</p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-3xl font-semibold text-foreground">{toNumber(upcomingDeadlineSummary?.dueInWindow)}</p>
+                <p className="text-sm text-muted-foreground">{PRODUCTIVITY_REPORTING_CONFIG.student.pendingDeadlineSuffix}</p>
+                <div className="border-t border-border pt-3"><p className="text-xs text-muted-foreground">{PRODUCTIVITY_REPORTING_CONFIG.student.nextDeadlinePrefix}</p><p className="mt-1 text-sm font-medium text-foreground">{upcomingDeadlineSummary?.nextDueAt ? new Date(upcomingDeadlineSummary.nextDueAt).toLocaleString() : PRODUCTIVITY_REPORTING_CONFIG.student.nextDeadlineUnavailable}</p></div>
               </div>
             )}
           </CardContent>

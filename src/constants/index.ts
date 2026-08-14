@@ -724,6 +724,46 @@ export const DASHBOARD_ANALYTICS_DELIVERY_POLICY = {
   observerThreshold: 0,
 } as const;
 
+export const PRODUCTIVITY_REPORTING_CONFIG = {
+  admin: {
+    subjectDistributionTitle: "Subject distribution",
+    atRiskStudentsTitle: "Attendance attention",
+    atRiskStudentsDescription: "Students below the configured attendance threshold are listed here.",
+    subjectUnit: "subjects",
+    attendanceRecordsUnit: "attendance records",
+    noAtRiskStudents: "No students currently meet the attendance attention criteria.",
+    noSubjectDistribution: "No department subjects are available yet.",
+    unassignedDepartment: "Unassigned department",
+    unnamedStudent: "Unnamed student",
+  },
+  teacher: {
+    title: "Class productivity",
+    assignedClassesLabel: "Assigned classes",
+    assignedSubjectsLabel: "Assigned subjects",
+    pendingWorkLabel: "Pending work",
+    myStudentsLabel: "My students",
+    assignmentCompletionTitle: "Assignment completion",
+    attendanceTitle: "Attendance summary",
+    assignmentsUnit: "expected submissions",
+    sessionsUnit: "recorded sessions",
+    noClassData: "No active classes have reporting data yet.",
+  },
+  student: {
+    progressMaximumPercent: 100,
+    title: "My progress",
+    progressTitle: "Released grade progress",
+    deadlineTitle: "Upcoming deadline summary",
+    releasedEntriesUnit: "released entries",
+    noProgress: "Released grade results will appear here when available.",
+    noDeadline: "No pending deadlines fall within the upcoming window.",
+    dueCountPrefix: "pending deadlines in the upcoming window",
+    nextDeadlinePrefix: "Next deadline",
+    nextDeadlineUnavailable: "No upcoming deadline",
+    pendingDeadlineSuffix: "pending deadlines in the upcoming window",
+    completionSuffix: "complete",
+  },
+} as const;
+
 export const DEPARTMENTS = [
   "Computer Science",
   "Mathematics",

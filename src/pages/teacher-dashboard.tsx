@@ -1,15 +1,24 @@
 import { useMemo, useState } from "react";
-import { useGetIdentity, useLink, useList } from "@refinedev/core";
+import { useCustom, useGetIdentity, useLink, useList } from "@refinedev/core";
 import { BookOpen, CalendarDays, GraduationCap, UsersRound } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { API_ENDPOINTS, PRODUCTIVITY_REPORTING_CONFIG, ROUTES } from "@/constants";
 import type { ClassDetails, User } from "@/types";
 
 type TeacherDashboardProps = {
   teacher: User;
+};
+
+type TeacherDashboardPayload = {
+  metrics?: { myClasses?: number; myStudents?: number; assignedSubjects?: number; pendingWork?: number };
+  productivity?: {
+    assignmentCompletionByClass?: Array<{ classId: number; className: string; expectedSubmissions?: number; completedSubmissions?: number; completionRate?: number }>;
+    attendanceByClass?: Array<{ classId: number; className: string; recordedSessions?: number; attendanceRate?: number }>;
+  };
 };
 
 const formatDate = (value?: string) => {
@@ -27,6 +36,14 @@ const formatDate = (value?: string) => {
 const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
   const Link = useLink();
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
+  const { query: dashboardQuery } = useCustom<TeacherDashboardPayload>({
+    url: API_ENDPOINTS.DASHBOARD_STATS,
+    method: "get",
+    queryOptions: { enabled: Boolean(teacher.id), retry: 1 },
+  });
+  const dashboard = dashboardQuery.data?.data;
+  const assignmentCompletionByClass = dashboard?.productivity?.assignmentCompletionByClass ?? [];
+  const attendanceByClass = dashboard?.productivity?.attendanceByClass ?? [];
 
   const { query: classesQuery } = useList<ClassDetails>({
     resource: "classes",
@@ -73,16 +90,10 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
   });
 
   const enrolledStudents = studentsQuery.data?.data ?? [];
-  const activeClasses = assignedClasses.filter(
-    (classItem) => classItem.status === "active"
-  ).length;
-  const subjectNames = Array.from(
-    new Set(
-      assignedClasses
-        .map((classItem) => classItem.subject?.name)
-        .filter((name): name is string => Boolean(name))
-    )
-  );
+  const activeClasses = dashboard?.metrics?.myClasses ?? 0;
+  const assignedSubjects = dashboard?.metrics?.assignedSubjects ?? 0;
+  const pendingWork = dashboard?.metrics?.pendingWork ?? 0;
+  const myStudents = dashboard?.metrics?.myStudents ?? 0;
 
   return (
     <div className="space-y-6">
@@ -96,25 +107,62 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           icon={GraduationCap}
-          label="Assigned classes"
-          value={assignedClasses.length}
-        />
-        <MetricCard
-          icon={BookOpen}
-          label="Assigned subjects"
-          value={subjectNames.length}
-        />
-        <MetricCard
-          icon={CalendarDays}
-          label="Active classes"
+          label={PRODUCTIVITY_REPORTING_CONFIG.teacher.assignedClassesLabel}
           value={activeClasses}
         />
         <MetricCard
+          icon={BookOpen}
+          label={PRODUCTIVITY_REPORTING_CONFIG.teacher.assignedSubjectsLabel}
+          value={assignedSubjects}
+        />
+        <MetricCard
+          icon={CalendarDays}
+          label={PRODUCTIVITY_REPORTING_CONFIG.teacher.pendingWorkLabel}
+          value={pendingWork}
+        />
+        <MetricCard
           icon={UsersRound}
-          label="Selected roster"
-          value={enrolledStudents.length}
+          label={PRODUCTIVITY_REPORTING_CONFIG.teacher.myStudentsLabel}
+          value={myStudents}
         />
       </div>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle>{PRODUCTIVITY_REPORTING_CONFIG.teacher.assignmentCompletionTitle}</CardTitle></CardHeader>
+          <CardContent>
+            {assignmentCompletionByClass.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{PRODUCTIVITY_REPORTING_CONFIG.teacher.noClassData}</p>
+            ) : (
+              <div className="space-y-3">
+                {assignmentCompletionByClass.map((summary) => (
+                  <div key={summary.classId} className="border-b border-border pb-3 last:border-0 last:pb-0">
+                    <div className="flex items-center justify-between gap-3"><p className="min-w-0 truncate text-sm font-medium">{summary.className}</p><Badge variant="secondary">{summary.completionRate ?? 0}%</Badge></div>
+                    <p className="mt-1 text-xs text-muted-foreground">{summary.completedSubmissions ?? 0}/{summary.expectedSubmissions ?? 0} {PRODUCTIVITY_REPORTING_CONFIG.teacher.assignmentsUnit}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle>{PRODUCTIVITY_REPORTING_CONFIG.teacher.attendanceTitle}</CardTitle></CardHeader>
+          <CardContent>
+            {attendanceByClass.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{PRODUCTIVITY_REPORTING_CONFIG.teacher.noClassData}</p>
+            ) : (
+              <div className="space-y-3">
+                {attendanceByClass.map((summary) => (
+                  <div key={summary.classId} className="border-b border-border pb-3 last:border-0 last:pb-0">
+                    <div className="flex items-center justify-between gap-3"><p className="min-w-0 truncate text-sm font-medium">{summary.className}</p><Badge variant="secondary">{summary.attendanceRate ?? 0}%</Badge></div>
+                    <p className="mt-1 text-xs text-muted-foreground">{summary.recordedSessions ?? 0} {PRODUCTIVITY_REPORTING_CONFIG.teacher.sessionsUnit}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
 
       <Card>
         <CardHeader>
@@ -174,7 +222,7 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
                       View students
                     </Button>
                     <Link
-                      to={`/classes/show/${classItem.id}`}
+                      to={ROUTES.CLASSES.SHOW.replace(":id", String(classItem.id))}
                       className="inline-flex h-9 items-center rounded-md border border-input px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
                       Class details
