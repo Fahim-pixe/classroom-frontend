@@ -70,7 +70,7 @@ export function Sidebar() {
       <ShadcnSidebarContent
         className={cn(
           "transition-discrete",
-          "duration-200",
+          "duration-(--motion-duration-standard)",
           "flex",
           "flex-col",
           "gap-2",
@@ -125,7 +125,7 @@ function NavigationGroup({ group, pendingRoute, onNavigate, onRouteIntent }: Nav
           "uppercase",
           "text-muted-foreground",
           "transition-all",
-          "duration-200",
+          "duration-(--motion-duration-standard)",
           {
             "h-8": open,
             "h-0": !open,
@@ -256,8 +256,18 @@ function SidebarHeader() {
       )}
     >
       <div
+        role={isMobile ? undefined : "button"}
+        tabIndex={isMobile ? undefined : 0}
+        aria-expanded={isMobile ? undefined : open}
+        aria-label={isMobile ? undefined : "Toggle sidebar navigation"}
         onClick={() => {
           if (!isMobile) {
+            setOpen(!open);
+          }
+        }}
+        onKeyDown={(event) => {
+          if (!isMobile && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
             setOpen(!open);
           }
         }}
@@ -270,7 +280,7 @@ function SidebarHeader() {
           "justify-start",
           "gap-2",
           "transition-discrete",
-          "duration-200",
+          "duration-(--motion-duration-standard)",
           {
             "pl-3": !open,
             "pl-5": open,
@@ -284,7 +294,7 @@ function SidebarHeader() {
             "text-sm",
             "font-bold",
             "transition-opacity",
-            "duration-200",
+            "duration-(--motion-duration-standard)",
             {
               "opacity-0": !open,
               "opacity-100": open,

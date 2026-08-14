@@ -11,10 +11,13 @@ import { Sidebar } from "./sidebar";
 export function Layout({ children }: PropsWithChildren) {
   return (
     <SidebarProvider>
+        <a className="skip-link" href="#main-content">Skip to main content</a>
         <Sidebar />
         <SidebarInset>
           <Header />
           <main
+            id="main-content"
+            tabIndex={-1}
             className={cn(
               "@container/main",
               "container",

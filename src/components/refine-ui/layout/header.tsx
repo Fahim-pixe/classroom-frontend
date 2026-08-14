@@ -14,6 +14,8 @@ import { ThemeToggle } from "@/components/refine-ui/theme/theme-toggle";
 import { UserAvatar } from "@/components/refine-ui/layout/user-avatar";
 import { useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { LogOutIcon, UserCircleIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/constants";
 import { cn } from "@/lib/utils";
 
 export const Header = () => {
@@ -49,6 +51,7 @@ function DesktopHeader() {
 
 function MobileHeader() {
   const { title } = useRefineOptions();
+  const { open } = useSidebar();
 
   return (
     <header
@@ -80,7 +83,7 @@ function MobileHeader() {
           "justify-start",
           "gap-2",
           "transition-discrete",
-          "duration-200",
+          "duration-(--motion-duration-standard)",
           {
             "pl-3": !open,
             "pl-5": open,
@@ -111,13 +114,15 @@ const UserDropdown = () => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <UserAvatar />
+      <DropdownMenuTrigger asChild>
+        <Button type="button" variant="ghost" size="icon" aria-label="Open account menu">
+          <UserAvatar />
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem
           onClick={() => {
-            go({ to: "/profile" });
+            go({ to: ROUTES.PROFILE });
           }}
         >
           <UserCircleIcon />

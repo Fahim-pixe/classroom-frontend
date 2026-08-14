@@ -11,6 +11,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  :where(a, button, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+    outline: var(--focus-ring-width) solid var(--ring);
+    outline-offset: var(--focus-ring-offset);
+  }
 }
 
 :root {
@@ -72,6 +76,12 @@
   --icon-size-button: 1rem;
   --icon-size-navigation: 1.125rem;
   --blur-overlay: 8px;
+  --touch-target-min-size: 2.75rem;
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+  --skip-link-offset: 1rem;
+  --accessibility-layer-index: 100;
+  --motion-duration-reduced: 0.01ms;
 }
 
 .dark {
@@ -182,7 +192,34 @@
 
 @layer components {
   [data-slot="button"] {
+    min-height: var(--touch-target-min-size);
     transition-duration: var(--motion-duration-standard);
+  }
+
+  [data-slot="button"][data-size="icon"],
+  [data-slot="input"],
+  [data-slot="select-trigger"] {
+    min-width: var(--touch-target-min-size);
+    min-height: var(--touch-target-min-size);
+  }
+
+  .skip-link {
+    position: fixed;
+    inset-inline-start: var(--skip-link-offset);
+    inset-block-start: var(--skip-link-offset);
+    z-index: var(--accessibility-layer-index);
+    transform: translateY(-200%);
+    border-radius: var(--radius);
+    background: var(--background);
+    color: var(--foreground);
+    outline: var(--focus-ring-width) solid var(--ring);
+    outline-offset: var(--focus-ring-offset);
+    padding: var(--skip-link-offset);
+    transition-duration: var(--motion-duration-fast);
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
   }
 
   [data-slot="button"] svg:not([class*="size-"]) {
@@ -591,5 +628,16 @@
         @apply text-sm text-muted-foreground space-y-1.5 list-decimal list-inside mt-2;
       }
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: var(--motion-duration-reduced) !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: var(--motion-duration-reduced) !important;
   }
 }
