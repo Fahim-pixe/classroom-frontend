@@ -97,7 +97,11 @@ export function preloadRouteData(route: string, { dataProvider, queryClient }: R
       queryFn: async () => {
         const classes = await getList({
           resource: API_ENDPOINTS.CLASSES.LIST,
-          pagination: { mode: "off" },
+          pagination: {
+            currentPage: 1,
+            pageSize: PERFORMANCE_CONFIG.routeDataPrefetch.classesPageSize,
+            mode: "server",
+          },
           filters: [],
           sorters: [],
         });
@@ -105,7 +109,11 @@ export function preloadRouteData(route: string, { dataProvider, queryClient }: R
         const assignments = firstClassId
           ? await getList({
               resource: API_ENDPOINTS.ASSIGNMENTS.LIST,
-              pagination: { mode: "off" },
+              pagination: {
+                currentPage: 1,
+                pageSize: PERFORMANCE_CONFIG.routeDataPrefetch.assignmentsPageSize,
+                mode: "server",
+              },
               filters: [{ field: "classId", operator: "eq", value: String(firstClassId) }],
               sorters: [],
             })

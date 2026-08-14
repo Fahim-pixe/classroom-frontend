@@ -359,6 +359,7 @@ export const PERFORMANCE_CONFIG = {
   routeDataPrefetch: {
     enabled: true,
     classesPageSize: 10,
+    assignmentsPageSize: 10,
     assignments: true,
     attendance: true,
   },
