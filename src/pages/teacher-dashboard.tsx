@@ -128,7 +128,7 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
       </div>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="interactive-card">
           <CardHeader><CardTitle>{PRODUCTIVITY_REPORTING_CONFIG.teacher.assignmentCompletionTitle}</CardTitle></CardHeader>
           <CardContent>
             {assignmentCompletionByClass.length === 0 ? (
@@ -145,7 +145,7 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="interactive-card">
           <CardHeader><CardTitle>{PRODUCTIVITY_REPORTING_CONFIG.teacher.attendanceTitle}</CardTitle></CardHeader>
           <CardContent>
             {attendanceByClass.length === 0 ? (
@@ -164,7 +164,7 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
         </Card>
       </section>
 
-      <Card>
+      <Card className="interactive-card">
         <CardHeader>
           <CardTitle>Assigned subjects and classes</CardTitle>
         </CardHeader>
@@ -173,7 +173,7 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
             <p className="text-sm text-muted-foreground">Loading assigned classes…</p>
           )}
           {!classesQuery.isLoading && assignedClasses.length === 0 && (
-            <div className="rounded-lg border border-dashed p-6 text-center">
+            <div className="rounded-[var(--radius-card)] border border-dashed p-6 text-center">
               <p className="font-medium">No classes assigned yet</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Classes assigned to your teacher account will appear here.
@@ -186,7 +186,7 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
               return (
                 <div
                   key={classItem.id}
-                  className={`rounded-lg border p-4 transition-colors ${
+                  className={`interactive-card rounded-[var(--radius-card)] border p-4 ${
                     isSelected
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/40"
@@ -221,12 +221,9 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
                     >
                       View students
                     </Button>
-                    <Link
-                      to={ROUTES.CLASSES.SHOW.replace(":id", String(classItem.id))}
-                      className="inline-flex h-9 items-center rounded-md border border-input px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    >
-                      Class details
-                    </Link>
+                    <Button type="button" size="sm" variant="outline" asChild>
+                      <Link to={ROUTES.CLASSES.SHOW.replace(":id", String(classItem.id))}>Class details</Link>
+                    </Button>
                   </div>
                 </div>
               );
@@ -235,7 +232,7 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="interactive-card">
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <div>
             <CardTitle>Enrolled students</CardTitle>
@@ -249,7 +246,7 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
         </CardHeader>
         <CardContent>
           {!selectedClass && (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+            <div className="rounded-[var(--radius-card)] border border-dashed p-6 text-center text-sm text-muted-foreground">
               Select “View students” on an assigned class to open its roster.
             </div>
           )}
@@ -257,7 +254,7 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
             <p className="text-sm text-muted-foreground">Loading enrolled students…</p>
           )}
           {selectedClass && !studentsQuery.isLoading && enrolledStudents.length === 0 && (
-            <div className="rounded-lg border border-dashed p-6 text-center">
+            <div className="rounded-[var(--radius-card)] border border-dashed p-6 text-center">
               <p className="font-medium">No students enrolled</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Students who enroll in this class will appear here.
@@ -276,7 +273,7 @@ const TeacherDashboard = ({ teacher }: TeacherDashboardProps) => {
                 </thead>
                 <tbody>
                   {enrolledStudents.map((student) => (
-                    <tr key={student.id} className="border-b last:border-0">
+                    <tr key={student.id} className="border-b transition-colors duration-(--motion-duration-fast) hover:bg-muted/40 last:border-0">
                       <td className="px-3 py-3 font-medium">{student.name || "Unnamed student"}</td>
                       <td className="px-3 py-3 text-muted-foreground">{student.email}</td>
                       <td className="px-3 py-3 text-muted-foreground">{formatDate(student.createdAt)}</td>
@@ -301,7 +298,7 @@ const MetricCard = ({
   label: string;
   value: number;
 }) => (
-  <Card>
+  <Card className="interactive-card">
     <CardContent className="flex items-center justify-between p-5">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>

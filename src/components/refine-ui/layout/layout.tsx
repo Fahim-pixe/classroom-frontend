@@ -5,10 +5,13 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { PERFORMANCE_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";
 import { Suspense, type PropsWithChildren } from "react";
+import { useLocation } from "react-router";
 import { PageLoadingFallback } from "./page-loading-fallback";
 import { Sidebar } from "./sidebar";
 
 export function Layout({ children }: PropsWithChildren) {
+  const location = useLocation();
+
   return (
     <SidebarProvider>
         <a className="skip-link" href="#main-content">Skip to main content</a>
@@ -38,9 +41,11 @@ export function Layout({ children }: PropsWithChildren) {
               "lg:pt-6"
             )}
           >
-            <Suspense fallback={<PageLoadingFallback label={PERFORMANCE_CONFIG.routeLoadingLabel} />}>
-              {children}
-            </Suspense>
+            <div key={location.pathname} className="app-shell-content">
+              <Suspense fallback={<PageLoadingFallback label={PERFORMANCE_CONFIG.routeLoadingLabel} />}>
+                {children}
+              </Suspense>
+            </div>
           </main>
         </SidebarInset>
     </SidebarProvider>

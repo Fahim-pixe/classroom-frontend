@@ -64,7 +64,7 @@ export function Sidebar() {
   );
 
   return (
-    <ShadcnSidebar collapsible="icon" className={cn("border-none")}>
+    <ShadcnSidebar collapsible="icon" className={cn("border-none", "sidebar-shell")}>
       <ShadcnSidebarRail />
       <SidebarHeader />
       <ShadcnSidebarContent
@@ -77,7 +77,7 @@ export function Sidebar() {
           "pt-2",
           "pb-2",
           "border-r",
-          "border-border",
+          "border-sidebar-border/70",
           {
             "px-3": open,
             "px-1": !open,
@@ -115,7 +115,7 @@ function NavigationGroup({ group, pendingRoute, onNavigate, onRouteIntent }: Nav
   const { open } = useShadcnSidebar();
 
   return (
-    <div className={cn("border-t", "border-sidebar-border", "pt-4")}>
+    <div className={cn("border-t", "border-sidebar-border/70", "pt-3", "first:border-t-0", "first:pt-1")}>
       <span
         className={cn(
           "ml-3",
@@ -126,6 +126,7 @@ function NavigationGroup({ group, pendingRoute, onNavigate, onRouteIntent }: Nav
           "text-muted-foreground",
           "transition-all",
           "duration-(--motion-duration-standard)",
+          "ease-[var(--motion-ease-out)]",
           {
             "h-8": open,
             "h-0": !open,
@@ -184,9 +185,14 @@ function NavigationLink({ item, pendingRoute, onNavigate, onRouteIntent }: Navig
         "md:min-h-10",
         "md:py-2",
         "text-sm",
+        "rounded-[var(--radius-control)]",
+        "transition-[background-color,color,box-shadow,transform]",
+        "duration-(--motion-duration-fast)",
+        "ease-[var(--motion-ease-out)]",
         {
           "bg-sidebar-primary": isSelected,
           "hover:!bg-sidebar-primary/90": isSelected,
+          "shadow-sm": isSelected,
           "text-sidebar-primary-foreground": isSelected,
           "hover:text-sidebar-primary-foreground": isSelected,
         },
@@ -259,7 +265,13 @@ function SidebarHeader() {
         role={isMobile ? undefined : "button"}
         tabIndex={isMobile ? undefined : 0}
         aria-expanded={isMobile ? undefined : open}
-        aria-label={isMobile ? undefined : "Toggle sidebar navigation"}
+        aria-label={
+          isMobile
+            ? undefined
+            : open
+              ? NAVIGATION_CONFIG.copy.collapseLabel
+              : NAVIGATION_CONFIG.copy.expandLabel
+        }
         onClick={() => {
           if (!isMobile) {
             setOpen(!open);
@@ -295,6 +307,7 @@ function SidebarHeader() {
             "font-bold",
             "transition-opacity",
             "duration-(--motion-duration-standard)",
+            "ease-[var(--motion-ease-out)]",
             {
               "opacity-0": !open,
               "opacity-100": open,

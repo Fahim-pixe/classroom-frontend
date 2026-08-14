@@ -52,10 +52,10 @@ export const SignUpForm = () => {
   };
 
   return (
-    <div className={cn("flex", "flex-col", "items-center", "justify-center", "px-6", "py-8", "min-h-svh")}>
-      <Card className={cn("sm:w-[456px]", "p-12", "mt-6")}>
+    <div className={cn("auth-shell", "flex", "flex-col", "items-center", "justify-center", "px-4", "py-6", "sm:px-6", "sm:py-8")}>
+      <Card className={cn("auth-card", "w-full", "max-w-md", "p-6", "sm:p-10", "mt-6")}>
         <CardHeader className={cn("px-0")}>
-          <CardTitle className={cn("text-green-600", "dark:text-green-400", "text-3xl", "font-semibold")}>
+          <CardTitle className={cn("text-primary", "text-3xl", "font-semibold")}>
             Sign up (Admin Portal)
           </CardTitle>
           <CardDescription className={cn("text-muted-foreground", "font-medium")}>
@@ -111,7 +111,7 @@ export const SignUpForm = () => {
             <Button
               type="submit"
               size="lg"
-              className={cn("w-full", "mt-6", "bg-green-600", "hover:bg-green-700", "text-white")}
+              className={cn("w-full", "mt-6")}
             >
               Sign up
             </Button>
@@ -121,7 +121,7 @@ export const SignUpForm = () => {
         <CardFooter>
           <div className={cn("w-full", "text-center text-sm", "mt-4")}>
             <span className={cn("text-muted-foreground")}>Have an account? </span>
-            <Link to="/login" className={cn("text-blue-600", "font-semibold", "underline")}>
+            <Link to="/login" className={cn("text-primary", "font-semibold", "underline")}>
               Sign in
             </Link>
           </div>

@@ -39,18 +39,18 @@ export function ClassesMobileList({ classes, canModify }: ClassesMobileListProps
   return (
     <div className="space-y-3">
       {classes.map((classItem) => (
-        <Card key={classItem.id} className="overflow-hidden">
+        <Card key={classItem.id} className="interactive-card overflow-hidden">
           <CardContent className="space-y-4 p-4">
             <div className="flex items-start gap-3">
               {classItem.bannerUrl ? (
                 <img
                   src={classItem.bannerUrl}
                   alt="Class banner"
-                  className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                  className="h-12 w-12 shrink-0 rounded-[var(--radius-control)] object-cover"
                   loading="lazy"
                 />
               ) : (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted text-xs text-muted-foreground">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-muted text-xs text-muted-foreground">
                   Class
                 </div>
               )}

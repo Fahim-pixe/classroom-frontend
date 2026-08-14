@@ -15,7 +15,7 @@ import { UserAvatar } from "@/components/refine-ui/layout/user-avatar";
 import { useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { LogOutIcon, UserCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ROUTES } from "@/constants";
+import { NAVIGATION_CONFIG, ROUTES } from "@/constants";
 import { cn } from "@/lib/utils";
 
 export const Header = () => {
@@ -28,6 +28,7 @@ function DesktopHeader() {
   return (
     <header
       className={cn(
+        "app-header",
         "sticky",
         "top-0",
         "flex",
@@ -37,7 +38,7 @@ function DesktopHeader() {
         "gap-4",
         "border-b",
         "border-border",
-        "bg-sidebar",
+        "bg-sidebar/90",
         "pr-3",
         "justify-end",
         "z-40"
@@ -56,6 +57,7 @@ function MobileHeader() {
   return (
     <header
       className={cn(
+        "app-header",
         "sticky",
         "top-0",
         "flex",
@@ -65,7 +67,7 @@ function MobileHeader() {
         "gap-2",
         "border-b",
         "border-border",
-        "bg-sidebar",
+        "bg-sidebar/90",
         "pr-3",
         "justify-between",
         "z-40"
@@ -115,7 +117,7 @@ const UserDropdown = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" aria-label="Open account menu">
+        <Button type="button" variant="ghost" size="icon" aria-label={NAVIGATION_CONFIG.copy.accountMenuLabel}>
           <UserAvatar />
         </Button>
       </DropdownMenuTrigger>
@@ -126,7 +128,7 @@ const UserDropdown = () => {
           }}
         >
           <UserCircleIcon />
-          <span>Profile</span>
+          <span>{NAVIGATION_CONFIG.copy.profileLabel}</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
@@ -137,7 +139,7 @@ const UserDropdown = () => {
             className={cn("text-destructive", "hover:text-destructive")}
           />
           <span className={cn("text-destructive", "hover:text-destructive")}>
-            {isLoggingOut ? "Logging out..." : "Logout"}
+            {isLoggingOut ? NAVIGATION_CONFIG.copy.logoutPendingLabel : NAVIGATION_CONFIG.copy.logoutLabel}
           </span>
         </DropdownMenuItem>
       </DropdownMenuContent>

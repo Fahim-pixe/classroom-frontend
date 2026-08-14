@@ -115,7 +115,7 @@ const StatCard = ({
   positive?: boolean;
   icon: typeof Users;
 }) => (
-  <Card className="relative overflow-hidden transition-shadow hover:shadow-md">
+  <Card className="interactive-card relative overflow-hidden">
     <CardContent className="p-4 sm:p-6">
       <Ellipsis className="absolute right-4 top-4 h-4 w-4 text-muted-foreground sm:right-5 sm:top-5 sm:h-5 sm:w-5" />
       <p className="text-sm font-medium text-foreground sm:text-base">{label}</p>
@@ -138,8 +138,8 @@ const StatCard = ({
 const QuickAction = ({ title, description, icon: Icon, to }: { title: string; description: string; icon: typeof Users; to: string }) => {
   const Link = useLink();
   return (
-    <Link to={to} className="group flex min-h-24 items-center gap-3 rounded-2xl border border-border bg-card px-4 shadow-sm transition-transform hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md sm:min-h-28 sm:gap-5 sm:px-6">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/20 sm:h-14 sm:w-14">
+    <Link to={to} className="group interactive-card flex min-h-24 items-center gap-3 rounded-[var(--radius-card)] border border-border bg-card px-4 hover:border-primary/40 sm:min-h-28 sm:gap-5 sm:px-6">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-primary/10 text-primary transition-colors duration-(--motion-duration-standard) group-hover:bg-primary/20 sm:h-14 sm:w-14">
         <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
       </span>
       <span className="min-w-0">
@@ -196,10 +196,10 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
           <p className="mt-3 text-base text-muted-foreground sm:mt-4 sm:text-lg">Track, manage and monitor your classes, students and academic activities.</p>
         </div>
         <div className="grid w-full grid-cols-2 gap-3 md:w-auto">
-          <Button variant="outline" className="h-11 w-full rounded-xl border-border bg-card px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
+          <Button variant="outline" className="h-11 w-full border-border bg-card px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
             <Link to={ROUTES.SUBJECTS.LIST}><FileUp className="mr-2 h-5 w-5" /> Import</Link>
           </Button>
-          <Button className="h-11 w-full rounded-xl px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
+          <Button className="h-11 w-full px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
             <Link to={ROUTES.CLASSES.CREATE}><Plus className="mr-2 h-5 w-5" /> Add</Link>
           </Button>
         </div>
@@ -224,7 +224,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
       </section>
 
       {hasError && (
-        <div className="mb-6 rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="mb-6 rounded-[var(--radius-card)] border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           Some statistics could not be refreshed. The dashboard is showing available values.
         </div>
       )}
@@ -232,7 +232,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
       <DeferredAdminDashboardAnalytics donutData={donutData} monthlyData={monthlyData} />
 
       <section className="mt-6 grid gap-6 xl:grid-cols-2">
-        <Card className="shadow-sm">
+        <Card className="interactive-card">
           <CardHeader><CardTitle>{PRODUCTIVITY_REPORTING_CONFIG.admin.subjectDistributionTitle}</CardTitle></CardHeader>
           <CardContent>
             {subjectDistribution.length === 0 ? (
@@ -249,7 +249,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
             )}
           </CardContent>
         </Card>
-        <Card className="shadow-sm">
+        <Card className="interactive-card">
           <CardHeader>
             <CardTitle>{PRODUCTIVITY_REPORTING_CONFIG.admin.atRiskStudentsTitle}</CardTitle>
             <p className="text-sm text-muted-foreground">{PRODUCTIVITY_REPORTING_CONFIG.admin.atRiskStudentsDescription}</p>
@@ -271,7 +271,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
         </Card>
       </section>
 
-      <Card className="mt-6 shadow-sm">
+      <Card className="interactive-card mt-6">
         <CardHeader><CardTitle>Recent activity</CardTitle></CardHeader>
         <CardContent>
           {latest.latestClasses.length === 0 ? (
@@ -324,10 +324,10 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
           <p className="mt-2 text-base text-muted-foreground sm:text-lg">Your academic command center for classes, deadlines, and announcements.</p>
         </div>
         <div className="grid w-full grid-cols-2 gap-3 md:w-auto">
-          <Button variant="outline" className="h-11 w-full rounded-xl px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
+          <Button variant="outline" className="h-11 w-full px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
             <Link to={ROUTES.MY_WEEK}>My week</Link>
           </Button>
-          <Button className="h-11 w-full rounded-xl px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
+          <Button className="h-11 w-full px-3 text-sm shadow-sm sm:h-12 sm:px-5 sm:text-base" asChild>
             <Link to={ROUTES.CLASSES.LIST}><Plus className="mr-2 h-5 w-5" /> Join class</Link>
           </Button>
         </div>
@@ -343,7 +343,7 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <Card className="shadow-sm">
+        <Card className="interactive-card">
           <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-border">
             <CardTitle className="text-xl">Today&apos;s schedule</CardTitle>
             <Badge variant="outline" className="text-xs">Current day</Badge>
@@ -380,7 +380,7 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
+        <Card className="interactive-card">
           <CardHeader className="pb-4 border-b border-border">
             <CardTitle className="text-xl">Smart Deadline Timeline</CardTitle>
           </CardHeader>
@@ -425,7 +425,7 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <Card className="shadow-sm">
+        <Card className="interactive-card">
           <CardHeader className="pb-4 border-b border-border"><CardTitle className="text-xl">{PRODUCTIVITY_REPORTING_CONFIG.student.progressTitle}</CardTitle></CardHeader>
           <CardContent className="pt-6">
             {progressByClass.length === 0 ? (
@@ -443,7 +443,7 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
             )}
           </CardContent>
         </Card>
-        <Card className="shadow-sm">
+        <Card className="interactive-card">
           <CardHeader className="pb-4 border-b border-border"><CardTitle className="text-xl">{PRODUCTIVITY_REPORTING_CONFIG.student.deadlineTitle}</CardTitle></CardHeader>
           <CardContent className="pt-6">
             {toNumber(upcomingDeadlineSummary?.dueInWindow) === 0 ? (
@@ -459,7 +459,7 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
         </Card>
       </section>
 
-      <Card className="shadow-sm">
+      <Card className="interactive-card">
         <CardHeader className="pb-4 border-b border-border">
           <CardTitle className="text-xl">Recent Announcements &amp; What&apos;s New</CardTitle>
         </CardHeader>

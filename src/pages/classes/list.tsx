@@ -66,7 +66,7 @@ const ClassesList = () => {
             <img
               src={bannerUrl}
               alt="Class banner"
-              className="ml-2 h-10 w-10 rounded-md object-cover"
+              className="ml-2 h-10 w-10 rounded-[var(--radius-control)] object-cover"
               loading="lazy"
             />
           ) : (
@@ -292,7 +292,7 @@ const ClassesList = () => {
         {canModify && <CreateButton resource={API_ENDPOINTS.CLASSES.LIST} className="min-h-11 w-full sm:w-auto" />}
       </div>
 
-      <section className="rounded-xl border border-border bg-card p-3 sm:p-4">
+      <section className="rounded-[var(--radius-card)] border border-border bg-card p-3 shadow-[var(--shadow-sm)] sm:p-4">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <div className="search-field w-full">
             <Search className="search-icon" />

@@ -513,6 +513,15 @@ export type NavigationGroupConfig = {
   items: readonly NavigationItemConfig[];
 };
 
+export type NavigationCopyConfig = {
+  collapseLabel: string;
+  expandLabel: string;
+  accountMenuLabel: string;
+  profileLabel: string;
+  logoutLabel: string;
+  logoutPendingLabel: string;
+};
+
 const STAFF_ROLES = [USER_ROLES.ADMIN, USER_ROLES.TEACHER] as const;
 const ALL_NAVIGATION_ROLES = [
   USER_ROLES.ADMIN,
@@ -522,6 +531,14 @@ const ALL_NAVIGATION_ROLES = [
 
 export const NAVIGATION_CONFIG = {
   defaultRole: USER_ROLES.STUDENT,
+  copy: {
+    collapseLabel: "Collapse navigation",
+    expandLabel: "Expand navigation",
+    accountMenuLabel: "Open account menu",
+    profileLabel: "Profile",
+    logoutLabel: "Logout",
+    logoutPendingLabel: "Logging out…",
+  },
   dashboard: {
     id: "dashboard",
     label: "Dashboard",
@@ -628,6 +645,7 @@ export const NAVIGATION_CONFIG = {
   ],
 } as const satisfies {
   defaultRole: NavigationRole;
+  copy: NavigationCopyConfig;
   dashboard: NavigationItemConfig;
   groups: readonly NavigationGroupConfig[];
 };
@@ -687,6 +705,16 @@ export const UI_TOKENS = {
   motion: {
     fast: "var(--motion-duration-fast)",
     standard: "var(--motion-duration-standard)",
+    emphasis: "var(--motion-duration-emphasis)",
+    pageEnter: "var(--motion-duration-page-enter)",
+    easeOut: "var(--motion-ease-out)",
+    easeInOut: "var(--motion-ease-in-out)",
+  },
+  surface: {
+    controlRadius: "var(--radius-control)",
+    cardRadius: "var(--radius-card)",
+    panelRadius: "var(--radius-panel)",
+    interactiveLift: "var(--surface-interactive-lift)",
   },
   viewport: {
     mobileBreakpointPx: 768,

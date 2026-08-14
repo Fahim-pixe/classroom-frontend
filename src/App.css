@@ -8,8 +8,18 @@
     @apply border-border outline-ring/50 antialiased;
     font-family: var(--font-sans);
   }
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
+    background-image: radial-gradient(
+      ellipse at top,
+      color-mix(in oklch, var(--primary) 8%, transparent),
+      transparent var(--surface-backdrop-fade)
+    );
+    background-attachment: fixed;
   }
   :where(a, button, input, select, textarea, [role="button"], [tabindex]):focus-visible {
     outline: var(--focus-ring-width) solid var(--ring);
@@ -53,7 +63,13 @@
   --font-sans: Inter, sans-serif;
   --font-serif: Merriweather, serif;
   --font-mono: JetBrains Mono, monospace;
-  --radius: 0.5rem;
+  --radius: 0.75rem;
+  --radius-control: calc(var(--radius) - 0.25rem);
+  --radius-card: calc(var(--radius) + 0.25rem);
+  --radius-panel: calc(var(--radius) + 0.5rem);
+  --surface-backdrop-fade: 70%;
+  --surface-interactive-lift: -0.125rem;
+  --interaction-active-scale: 0.98;
   --shadow-x: 0px;
   --shadow-y: 4px;
   --shadow-blur: 8px;
@@ -72,6 +88,11 @@
   --spacing: 0.25rem;
   --motion-duration-fast: 150ms;
   --motion-duration-standard: 200ms;
+  --motion-duration-emphasis: 260ms;
+  --motion-duration-page-enter: 320ms;
+  --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --motion-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --motion-page-enter-distance: 0.5rem;
   --icon-size-inline: 1rem;
   --icon-size-button: 1rem;
   --icon-size-navigation: 1.125rem;
@@ -120,7 +141,13 @@
   --font-sans: Inter, sans-serif;
   --font-serif: Merriweather, serif;
   --font-mono: JetBrains Mono, monospace;
-  --radius: 0.5rem;
+  --radius: 0.75rem;
+  --radius-control: calc(var(--radius) - 0.25rem);
+  --radius-card: calc(var(--radius) + 0.25rem);
+  --radius-panel: calc(var(--radius) + 0.5rem);
+  --surface-backdrop-fade: 70%;
+  --surface-interactive-lift: -0.125rem;
+  --interaction-active-scale: 0.98;
   --shadow-x: 0px;
   --shadow-y: 4px;
   --shadow-blur: 8px;
@@ -193,7 +220,57 @@
 @layer components {
   [data-slot="button"] {
     min-height: var(--touch-target-min-size);
+    border-radius: var(--radius-control);
     transition-duration: var(--motion-duration-standard);
+    transition-timing-function: var(--motion-ease-out);
+  }
+
+  [data-slot="card"] {
+    border-radius: var(--radius-card);
+    border-color: color-mix(in oklch, var(--border) 88%, transparent);
+    box-shadow: var(--shadow-sm);
+  }
+
+  [data-slot="input"],
+  [data-slot="select-trigger"] {
+    border-radius: var(--radius-control);
+    transition-duration: var(--motion-duration-fast);
+    transition-property: border-color, box-shadow, background-color;
+    transition-timing-function: var(--motion-ease-out);
+  }
+
+  .app-shell-content {
+    animation: page-enter var(--motion-duration-page-enter) var(--motion-ease-out) both;
+  }
+
+  .app-header,
+  .sidebar-shell {
+    backdrop-filter: blur(var(--blur-overlay));
+  }
+
+  .interactive-card {
+    transition-property: transform, box-shadow, border-color;
+    transition-duration: var(--motion-duration-standard);
+    transition-timing-function: var(--motion-ease-out);
+  }
+
+  .interactive-card:hover {
+    transform: translateY(var(--surface-interactive-lift));
+    box-shadow: var(--shadow-md);
+  }
+
+  .auth-shell {
+    min-height: 100svh;
+    background-image: radial-gradient(
+      circle at top right,
+      color-mix(in oklch, var(--primary) 14%, transparent),
+      transparent var(--surface-backdrop-fade)
+    );
+  }
+
+  .auth-card {
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-lg);
   }
 
   [data-slot="button"][data-size="icon"],
@@ -631,7 +708,23 @@
   }
 }
 
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--motion-page-enter-distance));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {
