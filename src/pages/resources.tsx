@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCreate, useList, useCustomMutation } from "@refinedev/core";
 import { FileText, Film, FileSpreadsheet, ExternalLink, Heart, Search, Upload, BookOpen, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,11 +6,13 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetIdentity } from "@refinedev/core";
-import { API_ENDPOINTS, BACKEND_BASE_URL, PERFORMANCE_CONFIG, STORAGE_CLIENT_CONFIG, UI_TOKENS } from "@/constants";
+import { API_ENDPOINTS, BACKEND_BASE_URL, OFFLINE_RESILIENCE_CONFIG, PERFORMANCE_CONFIG, STORAGE_CLIENT_CONFIG, UI_TOKENS } from "@/constants";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
 import { uploadFileToSignedUrl } from "@/lib/storage-upload";
 import { ResourcesListSkeleton } from "@/components/resources/resources-list-skeleton";
+import { useLocalDraft } from "@/hooks/use-local-draft";
+import { ContentFreshnessNotice } from "@/components/refine-ui/layout/content-freshness-notice";
 
 type Resource = {
   id: number;
@@ -46,20 +48,44 @@ function resourceIcon(resource: Resource) {
 }
 
 export default function Resources() {
-  const { data: identity } = useGetIdentity<{ role?: string }>();
+  const { data: identity } = useGetIdentity<{ id?: string; role?: string }>();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreate, setShowCreate] = useState(false);
-  const [classId, setClassId] = useState("");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [resourceUrl, setResourceUrl] = useState("");
+  const canCreate = identity?.role === "teacher" || identity?.role === "admin";
+  const initialResourceDraft = useMemo(() => ({
+    classId: "",
+    title: "",
+    description: "",
+    resourceUrl: "",
+    category: "lecture_notes",
+  }), []);
+  const isResourceDraftEmpty = useCallback(
+    (draft: typeof initialResourceDraft) => !draft.classId && !draft.title.trim() && !draft.description.trim() && !draft.resourceUrl.trim(),
+    [],
+  );
+  const {
+    value: resourceDraft,
+    setValue: setResourceDraft,
+    clear: clearResourceDraft,
+    hasRecoveredDraft,
+  } = useLocalDraft({
+    key: `resource-form:${identity?.id ?? "pending"}`,
+    initialValue: initialResourceDraft,
+    enabled: canCreate && Boolean(identity?.id),
+    isEmpty: isResourceDraftEmpty,
+  });
+  const { classId, title, description, resourceUrl, category: createCategory } = resourceDraft;
+  const setClassId = (value: string) => setResourceDraft((current) => ({ ...current, classId: value }));
+  const setTitle = (value: string) => setResourceDraft((current) => ({ ...current, title: value }));
+  const setDescription = (value: string) => setResourceDraft((current) => ({ ...current, description: value }));
+  const setResourceUrl = (value: string) => setResourceDraft((current) => ({ ...current, resourceUrl: value }));
+  const setCreateCategory = (value: string) => setResourceDraft((current) => ({ ...current, category: value }));
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isResourceUploading, setIsResourceUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState("");
-  const [createCategory, setCreateCategory] = useState("lecture_notes");
   const debouncedSearch = useDebouncedValue(
     search,
     UI_TOKENS.input.serverSearchDebounceMilliseconds,
@@ -97,8 +123,6 @@ export default function Resources() {
   const isError = resourceQuery.isError;
   const refetch = resourceQuery.refetch;
   const classesData = classesResult.data ?? [];
-  const canCreate = identity?.role === "teacher" || identity?.role === "admin";
-
   const submitCreate = async (event: React.FormEvent) => {
     event.preventDefault();
     setUploadError("");
@@ -181,7 +205,8 @@ export default function Resources() {
         },
         onSuccess: async () => {
           setShowCreate(false);
-          setClassId(""); setTitle(""); setDescription(""); setResourceUrl(""); setSelectedFile(null);
+          clearResourceDraft();
+          setSelectedFile(null);
           await refetch();
         },
       });
@@ -239,6 +264,7 @@ export default function Resources() {
       </section>
 
       {showCreate && canCreate && <Card className="rounded-2xl border-violet-100 shadow-sm"><CardHeader><CardTitle>Add a resource link</CardTitle></CardHeader><CardContent><form onSubmit={submitCreate} className="grid gap-4 md:grid-cols-2">
+        {hasRecoveredDraft && <p className="text-sm text-muted-foreground md:col-span-2" role="status">{OFFLINE_RESILIENCE_CONFIG.copy.draftRestored}</p>}
         <select value={classId} onChange={(event) => setClassId(event.target.value)} required className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"><option value="">Select class</option>{classesData.map((item: any) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
         <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Title" required />
         <Input value={resourceUrl} onChange={(event) => setResourceUrl(event.target.value)} placeholder="File or link URL (optional when uploading)" type="url" required={!selectedFile} />
@@ -255,6 +281,7 @@ export default function Resources() {
         <select value={category} onChange={(event) => setCategory(event.target.value)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700">{Object.entries(categoryLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
       </section>
 
+      <ContentFreshnessNotice hasCachedContent={resources.length > 0} />
       {isError && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Resources could not be loaded. Check that the latest backend migration is deployed, then refresh.</div>}
       {!isLoading && !isError && resourceTotal > 0 && <div className="flex flex-col justify-between gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center"><span>Showing {rangeStart}–{rangeEnd} of {resourceTotal} materials</span><div className="flex gap-2"><Button type="button" variant="outline" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>Previous</Button><Button type="button" variant="outline" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage >= totalPages}>Next</Button></div></div>}
       {isLoading ? <ResourcesListSkeleton /> : resources.length === 0 ? <Card className="rounded-2xl border-dashed border-slate-300 bg-slate-50"><CardContent className="flex flex-col items-center py-16 text-center"><BookOpen className="h-10 w-10 text-violet-400" /><h2 className="mt-4 text-lg font-semibold text-slate-900">No materials yet</h2><p className="mt-2 max-w-md text-sm text-slate-500">When a teacher adds a resource to one of your classes, it will appear here.</p></CardContent></Card> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{resources.map((resource) => <Card key={resource.id} className="rounded-2xl border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><CardContent className="p-5"><div className="flex items-start justify-between gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">{resourceIcon(resource)}</div><IconButton variant="ghost" onClick={() => void toggleFavorite(resource)} disabled={favoriteMutation.isPending} aria-pressed={resource.isFavorite} aria-label={resource.isFavorite ? "Remove from saved" : "Save resource"} className={resource.isFavorite ? "text-rose-500 hover:text-rose-600" : "text-muted-foreground hover:text-rose-500"}><Heart className="h-5 w-5" fill={resource.isFavorite ? "currentColor" : "none"} /></IconButton></div><p className="mt-5 text-xs font-semibold uppercase tracking-wide text-violet-600">{resource.subjectName} · {resource.className}</p><h2 className="mt-2 line-clamp-2 text-lg font-semibold text-slate-900">{resource.title}</h2><p className="mt-2 line-clamp-2 min-h-10 text-sm text-slate-500">{resource.description || "Course material"}</p><div className="mt-5 flex items-center justify-between"><span className="text-xs text-slate-400">{categoryLabels[resource.category] || "Material"}</span><Button variant="outline" onClick={() => openResource(resource)} className="h-9 rounded-lg px-3 text-xs"><ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Open</Button></div></CardContent></Card>)}</div>}

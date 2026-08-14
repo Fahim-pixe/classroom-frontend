@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { useList, useCreate, useBack, useCustom, useNotification } from "@refinedev/core";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useList, useCreate, useBack, useCustom, useGetIdentity, useNotification } from "@refinedev/core";
 import { format } from "date-fns";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { CreateView } from "@/components/refine-ui/views/create-view";
@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { AttendanceRosterSkeleton } from "@/components/attendance/attendance-roster-skeleton";
-import { API_ENDPOINTS } from "@/constants";
+import { API_ENDPOINTS, OFFLINE_RESILIENCE_CONFIG } from "@/constants";
 import type { User } from "@/types";
 import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
+import { useLocalDraft } from "@/hooks/use-local-draft";
+import { ContentFreshnessNotice } from "@/components/refine-ui/layout/content-freshness-notice";
 
 type AttendanceMark = "present" | "absent" | "late" | "excused";
 type AttendanceClass = { id: number; name: string; subjectCode: string };
@@ -23,11 +25,33 @@ type CustomQueryResponse<T> = { data: T | undefined };
 const AttendanceCreate = () => {
   const back = useBack();
   const { open: notify } = useNotification();
-
-  const [selectedClassId, setSelectedClassId] = useState<string>("");
-  const [sessionDate, setSessionDate] = useState<string>(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
-  const [sessionNotes, setSessionNotes] = useState<string>("");
-  const [rosterMarks, setRosterMarks] = useState<Record<string, AttendanceMark>>({});
+  const { data: identity } = useGetIdentity<User>();
+  const initialAttendanceDraft = useMemo(() => ({
+    selectedClassId: "",
+    sessionDate: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+    sessionNotes: "",
+    rosterMarks: {} as Record<string, AttendanceMark>,
+  }), []);
+  const isAttendanceDraftEmpty = useCallback(
+    (draft: typeof initialAttendanceDraft) => !draft.selectedClassId && !draft.sessionNotes.trim() && Object.keys(draft.rosterMarks).length === 0,
+    [],
+  );
+  const {
+    value: attendanceDraft,
+    setValue: setAttendanceDraft,
+    clear: clearAttendanceDraft,
+    hasRecoveredDraft,
+  } = useLocalDraft({
+    key: `attendance-session:${identity?.id ?? "pending"}`,
+    initialValue: initialAttendanceDraft,
+    enabled: Boolean(identity?.id),
+    isEmpty: isAttendanceDraftEmpty,
+  });
+  const { selectedClassId, sessionDate, sessionNotes, rosterMarks } = attendanceDraft;
+  const setSelectedClassId = (value: string) => setAttendanceDraft((current) => ({ ...current, selectedClassId: value, rosterMarks: {} }));
+  const setSessionDate = (value: string) => setAttendanceDraft((current) => ({ ...current, sessionDate: value }));
+  const setSessionNotes = (value: string) => setAttendanceDraft((current) => ({ ...current, sessionNotes: value }));
+  const setRosterMarks = (updater: (current: Record<string, AttendanceMark>) => Record<string, AttendanceMark>) => setAttendanceDraft((current) => ({ ...current, rosterMarks: updater(current.rosterMarks) }));
 
   const { data: classesResponse } = useCustom({
     url: API_ENDPOINTS.ATTENDANCE.CLASSES,
@@ -49,15 +73,23 @@ const AttendanceCreate = () => {
   const { execute } = useMutationFeedback();
   const isPending = mutation.isPending;
 
-  // Automatically mark everyone present when a new roster loads
+  // Automatically mark a new roster present without overwriting a recovered or in-progress draft.
   useEffect(() => {
-    if (students.length > 0) {
-      const defaultMarks: Record<string, AttendanceMark> = {};
-      students.forEach(student => defaultMarks[student.id] = "present");
-      setRosterMarks(defaultMarks);
-    } else {
-      setRosterMarks({});
+    if (students.length === 0) {
+      return;
     }
+
+    setRosterMarks((currentMarks) => {
+      const hasCurrentRosterMarks = students.some((student) => currentMarks[student.id] !== undefined);
+      if (hasCurrentRosterMarks) {
+        return currentMarks;
+      }
+
+      return students.reduce<Record<string, AttendanceMark>>((marks, student) => {
+        marks[student.id] = "present";
+        return marks;
+      }, {});
+    });
   }, [students]);
 
   const handleMarkChange = (studentId: string, mark: AttendanceMark) => {
@@ -93,6 +125,7 @@ const AttendanceCreate = () => {
           errorDescription: "Please check the session details and try again.",
         },
         onSuccess: () => {
+          clearAttendanceDraft();
           back();
         },
       });
@@ -118,6 +151,7 @@ const AttendanceCreate = () => {
           <Card className="shadow-sm">
             <CardHeader><CardTitle>Session Details</CardTitle></CardHeader>
             <CardContent className="space-y-4">
+              {hasRecoveredDraft && <p className="text-sm text-muted-foreground" role="status">{OFFLINE_RESILIENCE_CONFIG.copy.draftRestored}</p>}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Target Class</label>
                 <Select value={selectedClassId} onValueChange={setSelectedClassId}>
@@ -147,6 +181,7 @@ const AttendanceCreate = () => {
             <span className="text-sm text-muted-foreground">{students.length} students</span>
           </CardHeader>
           <CardContent>
+            <ContentFreshnessNotice hasCachedContent={students.length > 0} />
             {!selectedClassId ? (
               <div className="p-8 text-center text-muted-foreground border border-dashed border-border rounded-lg bg-muted/20">
                 Select a class to load the roster.

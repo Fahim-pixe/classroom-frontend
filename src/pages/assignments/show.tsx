@@ -1,6 +1,6 @@
 import { useGetIdentity, useShow, useList, useCustomMutation } from "@refinedev/core";
 import { useParams } from "react-router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ShowView, ShowViewHeader } from "@/components/refine-ui/views/show-view";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useNotificationProvider } from "@/components/refine-ui/notification/use-notification-provider";
 import { Assignment, StorageUploadValue, Submission, User } from "@/types";
 import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
+import { useLocalDraft } from "@/hooks/use-local-draft";
+import { ContentFreshnessNotice } from "@/components/refine-ui/layout/content-freshness-notice";
+import { OFFLINE_RESILIENCE_CONFIG } from "@/constants";
 
 const AssignmentsShow = () => {
   const { id } = useParams();
@@ -38,7 +41,18 @@ const AssignmentsShow = () => {
   const allSubmissions = teacherSubQuery.data?.data || [];
 
   // Form State
-  const [submissionText, setSubmissionText] = useState("");
+  const isSubmissionDraftEmpty = useCallback((value: string) => !value.trim(), []);
+  const {
+    value: submissionText,
+    setValue: setSubmissionText,
+    clear: clearSubmissionDraft,
+    hasRecoveredDraft,
+  } = useLocalDraft({
+    key: `assignment-submission:${user?.id ?? "pending"}:${id ?? "pending"}`,
+    initialValue: "",
+    enabled: isStudent && Boolean(id) && !mySubmission,
+    isEmpty: isSubmissionDraftEmpty,
+  });
   const [submissionFile, setSubmissionFile] = useState<StorageUploadValue | null>(null);
 
   const [gradeInput, setGradeInput] = useState<number | "">("");
@@ -76,6 +90,8 @@ const AssignmentsShow = () => {
           errorDescription: "Please check your connection and try again.",
         },
         onSuccess: async () => {
+          clearSubmissionDraft();
+          setSubmissionFile(null);
           await studentSubQuery.refetch();
         },
       });
@@ -139,6 +155,7 @@ const AssignmentsShow = () => {
           <Card>
             <CardHeader><CardTitle>Your Submission</CardTitle></CardHeader>
             <CardContent className="space-y-4">
+              <ContentFreshnessNotice hasCachedContent={Boolean(mySubmission || assignment)} />
               {mySubmission ? (
                 <div className="p-4 bg-muted/30 rounded-lg border border-border">
                   <Badge variant={mySubmission.grade !== null ? "default" : "secondary"} className="mb-4">
@@ -155,6 +172,11 @@ const AssignmentsShow = () => {
                 </div>
               ) : (
                 <>
+                  {hasRecoveredDraft && (
+                    <p className="text-sm text-muted-foreground" role="status">
+                      {OFFLINE_RESILIENCE_CONFIG.copy.draftRestored}
+                    </p>
+                  )}
                   <Textarea
                     placeholder="Type your submission here..."
                     className="min-h-30"

@@ -22,7 +22,7 @@ import { Layout } from "./components/refine-ui/layout/layout";
 import { useNotificationProvider } from "./components/refine-ui/notification/use-notification-provider";
 import { Toaster } from "./components/refine-ui/notification/toaster";
 import { ThemeProvider } from "./components/refine-ui/theme/theme-provider";
-import { PERFORMANCE_CONFIG, ROUTES } from "./constants";
+import { OFFLINE_RESILIENCE_CONFIG, PERFORMANCE_CONFIG, ROUTES } from "./constants";
 import { PageLoadingFallback } from "./components/refine-ui/layout/page-loading-fallback";
 import "./App.css";
 
@@ -110,6 +110,8 @@ function App() {
                       queries: {
                         staleTime: PERFORMANCE_CONFIG.queryStaleTimeMs,
                         gcTime: PERFORMANCE_CONFIG.queryGarbageCollectionTimeMs,
+                        networkMode: OFFLINE_RESILIENCE_CONFIG.queryNetworkMode,
+                        retry: OFFLINE_RESILIENCE_CONFIG.queryRetryCount,
                       },
                     },
                   },

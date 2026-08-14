@@ -408,6 +408,18 @@ export const MUTATION_FEEDBACK_CONFIG = {
   retryLabel: "Retry",
 } as const;
 
+export const OFFLINE_RESILIENCE_CONFIG = {
+  queryNetworkMode: "offlineFirst" as const,
+  queryRetryCount: 1,
+  draftStoragePrefix: "classroom-draft",
+  draftMaximumAgeMilliseconds: 7 * 24 * 60 * 60 * 1000,
+  copy: {
+    offline: "You are offline. Your unsaved form changes are stored on this device.",
+    stale: "You are offline. The content shown may not include recent changes.",
+    draftRestored: "Recovered a saved draft from this device.",
+  },
+} as const;
+
 export const DASHBOARD_ANALYTICS_DELIVERY_POLICY = {
   visibilityGatingEnabled: true,
   compactMobileSummaryEnabled: true,
