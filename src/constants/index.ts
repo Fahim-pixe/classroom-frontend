@@ -79,6 +79,17 @@ export const API_ENDPOINTS = {
     CLASS_USERS: (classId: string | number) => `/classes/${classId}/users`,
   },
   RESOURCE_UPLOAD_SIGNATURE: "/resources/upload-signature",
+  RESOURCES: {
+    VERSION: (resourceId: number) => `/resources/${resourceId}/version`,
+    ARCHIVE: (resourceId: number) => `/resources/${resourceId}/archive`,
+    RESTORE: (resourceId: number) => `/resources/${resourceId}/restore`,
+  },
+  CLASS_LIFECYCLE: {
+    ARCHIVE: (classId: number) => `/classes/${classId}/archive`,
+    RESTORE: (classId: number) => `/classes/${classId}/restore`,
+    ROTATE_INVITE: (classId: number) => `/classes/${classId}/invite-code`,
+    DUPLICATE: (classId: number) => `/classes/${classId}/duplicate`,
+  },
   MONITORING: {
     WEB_VITALS: "/monitoring/web-vitals",
   },
@@ -178,6 +189,59 @@ export const ATTENDANCE_WORKFLOW_CONFIG = {
 export const RESOURCE_LIST_CONFIG = {
   queryParams: {
     favoritesOnly: "favoritesOnly",
+    folder: "folder",
+    tag: "tag",
+    includeExpired: "includeExpired",
+  },
+} as const;
+
+export const RESOURCE_LIFECYCLE_CONFIG = {
+  metadata: {
+    maximumFolderLength: 120,
+    maximumTagCount: 10,
+    maximumTagLength: 40,
+  },
+  copy: {
+    folderPlaceholder: "Folder (optional)",
+    tagsPlaceholder: "Tags, separated by commas",
+    expiryLabel: "Available until (optional)",
+    archive: "Archive material",
+    restore: "Restore material",
+    revise: "Save revision",
+    revisionPending: "Saving material revision…",
+    revisionSuccess: "Material revision saved",
+    revisionError: "Unable to save material revision",
+    errorDescription: "Please try again.",
+    archivePending: "Archiving material…",
+    archiveSuccess: "Material archived",
+    archiveError: "Unable to archive material",
+    restorePending: "Restoring material…",
+    restoreSuccess: "Material restored",
+    restoreError: "Unable to restore material",
+    expired: "Expired",
+    versionPrefix: "Version",
+  },
+} as const;
+
+export const CLASS_LIFECYCLE_CONFIG = {
+  copy: {
+    archive: "Archive class",
+    restore: "Restore class",
+    duplicate: "Duplicate class",
+    rotateInvite: "Rotate invite code",
+    archivePending: "Archiving class…",
+    archiveSuccess: "Class archived",
+    archiveError: "Unable to archive class",
+    errorDescription: "Please try again.",
+    restorePending: "Restoring class…",
+    restoreSuccess: "Class restored",
+    restoreError: "Unable to restore class",
+    duplicatePending: "Duplicating class…",
+    duplicateSuccess: "Class duplicated as inactive",
+    duplicateError: "Unable to duplicate class",
+    rotatePending: "Rotating invitation code…",
+    rotateSuccess: "Invitation code rotated",
+    rotateError: "Unable to rotate invitation code",
   },
 } as const;
 

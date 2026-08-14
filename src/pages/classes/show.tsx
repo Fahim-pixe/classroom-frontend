@@ -1,5 +1,6 @@
 import {
   useCreate,
+  useCustomMutation,
   useGetIdentity,
   useList,
   useShow,
@@ -25,6 +26,8 @@ import { Separator } from "@/components/ui/separator";
 import { ClassDetailSkeleton } from "@/components/classes/class-detail-skeleton";
 import { ClassActivitySkeleton } from "@/components/classes/class-activity-skeleton";
 import { ClassDetails } from "@/types";
+import { API_ENDPOINTS, CLASS_LIFECYCLE_CONFIG } from "@/constants";
+import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
 
 type ClassUser = {
   id: string;
@@ -87,7 +90,7 @@ const ClassesShow = () => {
   const { query } = useShow<ClassDetails>({
     resource: "classes",
   });
-  const { data: identity } = useGetIdentity<{ role?: string }>();
+  const { data: identity } = useGetIdentity<{ id?: string; role?: string }>();
   const { open: notify } = useNotificationProvider();
   const {
     result: announcementsResult,
@@ -136,6 +139,8 @@ const ClassesShow = () => {
   const { mutateAsync: createAnnouncement, mutation: announcementMutation } = useCreate<Announcement>();
   const { mutateAsync: createAssignment, mutation: assignmentMutation } = useCreate<Assignment>();
   const { mutateAsync: createSubmission, mutation: submissionMutation } = useCreate();
+  const { mutateAsync: mutateClassLifecycle, mutation: classLifecycleMutation } = useCustomMutation();
+  const { execute: executeFeedback } = useMutationFeedback();
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementContent, setAnnouncementContent] = useState("");
   const [announcementPinned, setAnnouncementPinned] = useState(false);
@@ -146,6 +151,7 @@ const ClassesShow = () => {
   const [submissionDrafts, setSubmissionDrafts] = useState<Record<number, string>>({});
 
   const classDetails = query.data?.data;
+  const refreshClassDetails = query.refetch;
 
   const studentColumns = useMemo<ColumnDef<ClassUser>[]>(
     () => [
@@ -189,6 +195,33 @@ const ClassesShow = () => {
     ],
     []
   );
+
+  const runClassLifecycle = async (operation: "archive" | "restore" | "duplicate" | "rotateInvite") => {
+    if (!classDetails) return;
+    const routeByOperation = {
+      archive: API_ENDPOINTS.CLASS_LIFECYCLE.ARCHIVE(classDetails.id),
+      restore: API_ENDPOINTS.CLASS_LIFECYCLE.RESTORE(classDetails.id),
+      duplicate: API_ENDPOINTS.CLASS_LIFECYCLE.DUPLICATE(classDetails.id),
+      rotateInvite: API_ENDPOINTS.CLASS_LIFECYCLE.ROTATE_INVITE(classDetails.id),
+    } as const;
+    const labelsByOperation = {
+      archive: { pending: CLASS_LIFECYCLE_CONFIG.copy.archivePending, success: CLASS_LIFECYCLE_CONFIG.copy.archiveSuccess, error: CLASS_LIFECYCLE_CONFIG.copy.archiveError },
+      restore: { pending: CLASS_LIFECYCLE_CONFIG.copy.restorePending, success: CLASS_LIFECYCLE_CONFIG.copy.restoreSuccess, error: CLASS_LIFECYCLE_CONFIG.copy.restoreError },
+      duplicate: { pending: CLASS_LIFECYCLE_CONFIG.copy.duplicatePending, success: CLASS_LIFECYCLE_CONFIG.copy.duplicateSuccess, error: CLASS_LIFECYCLE_CONFIG.copy.duplicateError },
+      rotateInvite: { pending: CLASS_LIFECYCLE_CONFIG.copy.rotatePending, success: CLASS_LIFECYCLE_CONFIG.copy.rotateSuccess, error: CLASS_LIFECYCLE_CONFIG.copy.rotateError },
+    } as const;
+    try {
+      await executeFeedback({
+        action: () => mutateClassLifecycle({ url: routeByOperation[operation], method: "post", values: {} }),
+        labels: { ...labelsByOperation[operation], errorDescription: CLASS_LIFECYCLE_CONFIG.copy.errorDescription },
+        onSuccess: async () => {
+          await refreshClassDetails();
+        },
+      });
+    } catch {
+      // The shared feedback layer has already announced the failure and retry action.
+    }
+  };
 
   const handleAnnouncementSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -307,6 +340,7 @@ const ClassesShow = () => {
   }
 
   const teacherName = classDetails.teacher?.name ?? "Unknown";
+  const canManageLifecycle = identity?.role === "admin" || classDetails.teacher?.id === identity?.id;
   const teacherInitials = teacherName
     .split(" ")
     .filter(Boolean)
@@ -343,7 +377,7 @@ const ClassesShow = () => {
               <p>{classDetails.description}</p>
             </div>
 
-            <div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <Badge variant="outline">{classDetails.capacity} spots</Badge>
               <Badge
                 variant={
@@ -353,6 +387,9 @@ const ClassesShow = () => {
               >
                 {classDetails.status.toUpperCase()}
               </Badge>
+              {canManageLifecycle && <Button type="button" variant="outline" onClick={() => void runClassLifecycle(classDetails.status === "archived" ? "restore" : "archive")} disabled={classLifecycleMutation.isPending}>{classDetails.status === "archived" ? CLASS_LIFECYCLE_CONFIG.copy.restore : CLASS_LIFECYCLE_CONFIG.copy.archive}</Button>}
+              {canManageLifecycle && <Button type="button" variant="outline" onClick={() => void runClassLifecycle("duplicate")} disabled={classLifecycleMutation.isPending}>{CLASS_LIFECYCLE_CONFIG.copy.duplicate}</Button>}
+              {canManageLifecycle && <Button type="button" variant="outline" onClick={() => void runClassLifecycle("rotateInvite")} disabled={classLifecycleMutation.isPending}>{CLASS_LIFECYCLE_CONFIG.copy.rotateInvite}</Button>}
             </div>
           </div>
 

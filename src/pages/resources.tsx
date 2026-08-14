@@ -6,7 +6,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetIdentity } from "@refinedev/core";
-import { API_ENDPOINTS, BACKEND_BASE_URL, OFFLINE_RESILIENCE_CONFIG, PERFORMANCE_CONFIG, STORAGE_CLIENT_CONFIG, UI_TOKENS } from "@/constants";
+import { API_ENDPOINTS, BACKEND_BASE_URL, OFFLINE_RESILIENCE_CONFIG, PERFORMANCE_CONFIG, RESOURCE_LIFECYCLE_CONFIG, STORAGE_CLIENT_CONFIG, UI_TOKENS } from "@/constants";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useMutationFeedback } from "@/hooks/use-mutation-feedback";
 import { uploadFileToSignedUrl } from "@/lib/storage-upload";
@@ -27,6 +27,10 @@ type Resource = {
   mimeType?: string | null;
   isFavorite?: boolean;
   lastViewedAt?: string | null;
+  folder?: string | null;
+  tags?: string[];
+  expiresAt?: string | null;
+  version?: number;
   createdAt: string;
 };
 
@@ -60,6 +64,9 @@ export default function Resources() {
     description: "",
     resourceUrl: "",
     category: "lecture_notes",
+    folder: "",
+    tags: "",
+    expiresAt: "",
   }), []);
   const isResourceDraftEmpty = useCallback(
     (draft: typeof initialResourceDraft) => !draft.classId && !draft.title.trim() && !draft.description.trim() && !draft.resourceUrl.trim(),
@@ -76,16 +83,23 @@ export default function Resources() {
     enabled: canCreate && Boolean(identity?.id),
     isEmpty: isResourceDraftEmpty,
   });
-  const { classId, title, description, resourceUrl, category: createCategory } = resourceDraft;
+  const { classId, title, description, resourceUrl, category: createCategory, folder: createFolder, tags: createTags, expiresAt: createExpiresAt } = resourceDraft;
   const setClassId = (value: string) => setResourceDraft((current) => ({ ...current, classId: value }));
   const setTitle = (value: string) => setResourceDraft((current) => ({ ...current, title: value }));
   const setDescription = (value: string) => setResourceDraft((current) => ({ ...current, description: value }));
   const setResourceUrl = (value: string) => setResourceDraft((current) => ({ ...current, resourceUrl: value }));
   const setCreateCategory = (value: string) => setResourceDraft((current) => ({ ...current, category: value }));
+  const setCreateFolder = (value: string) => setResourceDraft((current) => ({ ...current, folder: value }));
+  const setCreateTags = (value: string) => setResourceDraft((current) => ({ ...current, tags: value }));
+  const setCreateExpiresAt = (value: string) => setResourceDraft((current) => ({ ...current, expiresAt: value }));
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isResourceUploading, setIsResourceUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState("");
+  const [revisionResourceId, setRevisionResourceId] = useState<number | null>(null);
+  const [revisionFolder, setRevisionFolder] = useState("");
+  const [revisionTags, setRevisionTags] = useState("");
+  const [revisionExpiresAt, setRevisionExpiresAt] = useState("");
   const debouncedSearch = useDebouncedValue(
     search,
     UI_TOKENS.input.serverSearchDebounceMilliseconds,
@@ -113,6 +127,7 @@ export default function Resources() {
   const { result: classesResult } = useList<any>({ resource: "classes", pagination: { mode: "off" } });
   const { mutateAsync: createResource, mutation: createResourceMutation } = useCreate();
   const { mutateAsync: updateFavorite, mutation: favoriteMutation } = useCustomMutation();
+  const { mutateAsync: updateResource, mutation: resourceLifecycleMutation } = useCustomMutation();
   const { execute } = useMutationFeedback();
   const resources: Resource[] = resourceResult.data ?? [];
   const resourceTotal = resourceResult.total ?? 0;
@@ -194,14 +209,14 @@ export default function Resources() {
           }
 
           if (!finalResourceUrl && !storageAssetId) throw new Error("Add a resource URL or choose a document to upload");
-          return createResource({ resource: "resources", values: { classId: Number(classId), title, description, category: createCategory, resourceUrl: finalResourceUrl || undefined, storageAssetId, mimeType: selectedFile?.type, fileSizeBytes: selectedFile?.size, isPublished: true } });
+          return createResource({ resource: "resources", values: { classId: Number(classId), title, description, category: createCategory, resourceUrl: finalResourceUrl || undefined, storageAssetId, mimeType: selectedFile?.type, fileSizeBytes: selectedFile?.size, isPublished: true, folder: createFolder, tags: createTags.split(",").map((tag) => tag.trim()).filter(Boolean), expiresAt: createExpiresAt || null } });
         },
         labels: {
           pending: "Publishing material…",
           success: "Material published",
           successDescription: "The resource is now available to the class.",
           error: "Unable to publish material",
-          errorDescription: "Please review the resource details and try again.",
+          errorDescription: RESOURCE_LIFECYCLE_CONFIG.copy.errorDescription,
         },
         onSuccess: async () => {
           setShowCreate(false);
@@ -212,6 +227,63 @@ export default function Resources() {
       });
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Upload failed");
+    }
+  };
+
+  const beginRevision = (resource: Resource) => {
+    setRevisionResourceId(resource.id);
+    setRevisionFolder(resource.folder ?? "");
+    setRevisionTags((resource.tags ?? []).join(", "));
+    setRevisionExpiresAt(resource.expiresAt ? resource.expiresAt.slice(0, 10) : "");
+  };
+
+  const saveRevision = async (resource: Resource) => {
+    try {
+      await execute({
+        action: () => updateResource({
+          url: API_ENDPOINTS.RESOURCES.VERSION(resource.id),
+          method: "patch",
+          values: {
+            title: resource.title,
+            description: resource.description ?? "",
+            folder: revisionFolder,
+            tags: revisionTags.split(",").map((tag) => tag.trim()).filter(Boolean),
+            expiresAt: revisionExpiresAt || null,
+          },
+        }),
+        labels: {
+          pending: RESOURCE_LIFECYCLE_CONFIG.copy.revisionPending,
+          success: RESOURCE_LIFECYCLE_CONFIG.copy.revisionSuccess,
+          error: RESOURCE_LIFECYCLE_CONFIG.copy.revisionError,
+          errorDescription: RESOURCE_LIFECYCLE_CONFIG.copy.errorDescription,
+        },
+        onSuccess: async () => {
+          setRevisionResourceId(null);
+          await refetch();
+        },
+      });
+    } catch {
+      // The shared feedback layer has already announced the failure and retry action.
+    }
+  };
+
+  const setArchivedState = async (resource: Resource, shouldArchive: boolean) => {
+    try {
+      await execute({
+        action: () => updateResource({
+          url: shouldArchive ? API_ENDPOINTS.RESOURCES.ARCHIVE(resource.id) : API_ENDPOINTS.RESOURCES.RESTORE(resource.id),
+          method: "post",
+          values: {},
+        }),
+        labels: shouldArchive
+          ? { pending: RESOURCE_LIFECYCLE_CONFIG.copy.archivePending, success: RESOURCE_LIFECYCLE_CONFIG.copy.archiveSuccess, error: RESOURCE_LIFECYCLE_CONFIG.copy.archiveError, errorDescription: RESOURCE_LIFECYCLE_CONFIG.copy.errorDescription }
+          : { pending: RESOURCE_LIFECYCLE_CONFIG.copy.restorePending, success: RESOURCE_LIFECYCLE_CONFIG.copy.restoreSuccess, error: RESOURCE_LIFECYCLE_CONFIG.copy.restoreError, errorDescription: RESOURCE_LIFECYCLE_CONFIG.copy.errorDescription },
+        onSuccess: async () => {
+          await refetch();
+        },
+      });
+    } catch {
+      // The shared feedback layer has already announced the failure and retry action.
     }
   };
 
@@ -272,6 +344,9 @@ export default function Resources() {
         {isResourceUploading && <progress className="w-full md:col-span-2" value={uploadProgress ?? STORAGE_CLIENT_CONFIG.delivery.uploadProgressMinimumPercent} max={STORAGE_CLIENT_CONFIG.delivery.uploadProgressMaximumPercent} aria-label="Learning material upload progress" />}
         <select value={createCategory} onChange={(event) => setCreateCategory(event.target.value)} className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm">{Object.entries(categoryLabels).filter(([key]) => key !== "all").map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
         <Input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Short description (optional)" className="md:col-span-2" />
+        <Input value={createFolder} onChange={(event) => setCreateFolder(event.target.value)} placeholder={RESOURCE_LIFECYCLE_CONFIG.copy.folderPlaceholder} maxLength={RESOURCE_LIFECYCLE_CONFIG.metadata.maximumFolderLength} />
+        <Input value={createTags} onChange={(event) => setCreateTags(event.target.value)} placeholder={RESOURCE_LIFECYCLE_CONFIG.copy.tagsPlaceholder} />
+        <label className="grid gap-1 text-sm text-muted-foreground"><span>{RESOURCE_LIFECYCLE_CONFIG.copy.expiryLabel}</span><Input type="date" value={createExpiresAt} onChange={(event) => setCreateExpiresAt(event.target.value)} /></label>
         {uploadError && <p className="text-sm text-destructive md:col-span-2">{uploadError}</p>}
         <div className="flex gap-3 md:col-span-2"><Button type="submit" disabled={createResourceMutation.isPending || isResourceUploading} className="rounded-xl bg-violet-600 hover:bg-violet-700">{isResourceUploading ? `Uploading (${uploadProgress ?? STORAGE_CLIENT_CONFIG.delivery.uploadProgressMinimumPercent}%)` : createResourceMutation.isPending ? "Saving…" : "Save material"}</Button><Button type="button" variant="outline" onClick={() => setShowCreate(false)} className="rounded-xl">Cancel</Button></div>
       </form></CardContent></Card>}
@@ -284,7 +359,7 @@ export default function Resources() {
       <ContentFreshnessNotice hasCachedContent={resources.length > 0} />
       {isError && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Resources could not be loaded. Check that the latest backend migration is deployed, then refresh.</div>}
       {!isLoading && !isError && resourceTotal > 0 && <div className="flex flex-col justify-between gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center"><span>Showing {rangeStart}–{rangeEnd} of {resourceTotal} materials</span><div className="flex gap-2"><Button type="button" variant="outline" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1}>Previous</Button><Button type="button" variant="outline" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage >= totalPages}>Next</Button></div></div>}
-      {isLoading ? <ResourcesListSkeleton /> : resources.length === 0 ? <Card className="rounded-2xl border-dashed border-slate-300 bg-slate-50"><CardContent className="flex flex-col items-center py-16 text-center"><BookOpen className="h-10 w-10 text-violet-400" /><h2 className="mt-4 text-lg font-semibold text-slate-900">No materials yet</h2><p className="mt-2 max-w-md text-sm text-slate-500">When a teacher adds a resource to one of your classes, it will appear here.</p></CardContent></Card> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{resources.map((resource) => <Card key={resource.id} className="rounded-2xl border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><CardContent className="p-5"><div className="flex items-start justify-between gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">{resourceIcon(resource)}</div><IconButton variant="ghost" onClick={() => void toggleFavorite(resource)} disabled={favoriteMutation.isPending} aria-pressed={resource.isFavorite} aria-label={resource.isFavorite ? "Remove from saved" : "Save resource"} className={resource.isFavorite ? "text-rose-500 hover:text-rose-600" : "text-muted-foreground hover:text-rose-500"}><Heart className="h-5 w-5" fill={resource.isFavorite ? "currentColor" : "none"} /></IconButton></div><p className="mt-5 text-xs font-semibold uppercase tracking-wide text-violet-600">{resource.subjectName} · {resource.className}</p><h2 className="mt-2 line-clamp-2 text-lg font-semibold text-slate-900">{resource.title}</h2><p className="mt-2 line-clamp-2 min-h-10 text-sm text-slate-500">{resource.description || "Course material"}</p><div className="mt-5 flex items-center justify-between"><span className="text-xs text-slate-400">{categoryLabels[resource.category] || "Material"}</span><Button variant="outline" onClick={() => openResource(resource)} className="h-9 rounded-lg px-3 text-xs"><ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Open</Button></div></CardContent></Card>)}</div>}
+      {isLoading ? <ResourcesListSkeleton /> : resources.length === 0 ? <Card className="rounded-2xl border-dashed border-slate-300 bg-slate-50"><CardContent className="flex flex-col items-center py-16 text-center"><BookOpen className="h-10 w-10 text-violet-400" /><h2 className="mt-4 text-lg font-semibold text-slate-900">No materials yet</h2><p className="mt-2 max-w-md text-sm text-slate-500">When a teacher adds a resource to one of your classes, it will appear here.</p></CardContent></Card> : <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{resources.map((resource) => <Card key={resource.id} className="rounded-2xl border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><CardContent className="p-5"><div className="flex items-start justify-between gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-violet-600">{resourceIcon(resource)}</div><IconButton variant="ghost" onClick={() => void toggleFavorite(resource)} disabled={favoriteMutation.isPending} aria-pressed={resource.isFavorite} aria-label={resource.isFavorite ? "Remove from saved" : "Save resource"} className={resource.isFavorite ? "text-rose-500 hover:text-rose-600" : "text-muted-foreground hover:text-rose-500"}><Heart className="h-5 w-5" fill={resource.isFavorite ? "currentColor" : "none"} /></IconButton></div><p className="mt-5 text-xs font-semibold uppercase tracking-wide text-violet-600">{resource.subjectName} · {resource.className}</p><h2 className="mt-2 line-clamp-2 text-lg font-semibold text-slate-900">{resource.title}</h2><p className="mt-2 line-clamp-2 min-h-10 text-sm text-slate-500">{resource.description || "Course material"}</p><div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">{resource.folder && <span>{resource.folder}</span>}{(resource.tags ?? []).map((tag) => <span key={tag}>{tag}</span>)}{resource.version && <span>{RESOURCE_LIFECYCLE_CONFIG.copy.versionPrefix} {resource.version}</span>}{resource.expiresAt && new Date(resource.expiresAt).getTime() < Date.now() && <span>{RESOURCE_LIFECYCLE_CONFIG.copy.expired}</span>}</div>{canCreate && revisionResourceId === resource.id && <div className="mt-4 grid gap-2"><Input value={revisionFolder} onChange={(event) => setRevisionFolder(event.target.value)} placeholder={RESOURCE_LIFECYCLE_CONFIG.copy.folderPlaceholder} maxLength={RESOURCE_LIFECYCLE_CONFIG.metadata.maximumFolderLength} /><Input value={revisionTags} onChange={(event) => setRevisionTags(event.target.value)} placeholder={RESOURCE_LIFECYCLE_CONFIG.copy.tagsPlaceholder} /><Input type="date" value={revisionExpiresAt} onChange={(event) => setRevisionExpiresAt(event.target.value)} aria-label={RESOURCE_LIFECYCLE_CONFIG.copy.expiryLabel} /><div className="flex gap-2"><Button type="button" variant="outline" onClick={() => void saveRevision(resource)} disabled={resourceLifecycleMutation.isPending}>{RESOURCE_LIFECYCLE_CONFIG.copy.revise}</Button><Button type="button" variant="ghost" onClick={() => setRevisionResourceId(null)}>Cancel</Button></div></div>}<div className="mt-5 flex flex-wrap items-center justify-between gap-2"><span className="text-xs text-slate-400">{categoryLabels[resource.category] || "Material"}</span><div className="flex gap-2"><Button variant="outline" onClick={() => openResource(resource)} className="h-9 rounded-lg px-3 text-xs"><ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Open</Button>{canCreate && <Button type="button" variant="outline" onClick={() => beginRevision(resource)} disabled={resourceLifecycleMutation.isPending}>{RESOURCE_LIFECYCLE_CONFIG.copy.revise}</Button>}{canCreate && <Button type="button" variant="ghost" onClick={() => void setArchivedState(resource, true)} disabled={resourceLifecycleMutation.isPending}>{RESOURCE_LIFECYCLE_CONFIG.copy.archive}</Button>}</div></div></CardContent></Card>)}</div>}
     </div>
   );
 }

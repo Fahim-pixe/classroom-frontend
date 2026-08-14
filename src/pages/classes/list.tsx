@@ -32,7 +32,7 @@ import { getRoutePrefetchedData } from "@/lib/route-data-preload";
 type ClassListItem = {
   id: number;
   name: string;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "archived";
   bannerUrl?: string;
   subject?: {
     name: string;
@@ -91,7 +91,7 @@ const ClassesList = () => {
         size: 140,
         header: () => <p className="column-title">Status</p>,
         cell: ({ getValue }) => {
-          const status = getValue<"active" | "inactive">();
+          const status = getValue<"active" | "inactive" | "archived">();
           const variant = status === "active" ? "default" : "secondary";
 
           return <Badge variant={variant}>{status}</Badge>;

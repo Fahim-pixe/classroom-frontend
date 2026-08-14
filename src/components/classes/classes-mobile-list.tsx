@@ -8,7 +8,7 @@ import { API_ENDPOINTS } from "@/constants";
 type ClassMobileListItem = {
   id: number;
   name: string;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "archived";
   bannerUrl?: string;
   subject?: {
     name: string;
