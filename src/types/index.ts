@@ -172,6 +172,24 @@ export type AttendanceRecord = {
   student?: User;
 };
 
+export type AttendanceCorrection = {
+  id: number;
+  attendanceRecordId: number;
+  studentId: string;
+  studentName?: string;
+  requestedStatus: AttendanceRecord["status"];
+  currentStatus: AttendanceRecord["status"];
+  reason: string;
+  status: "pending" | "approved" | "rejected";
+  reviewerId?: string | null;
+  reviewNote?: string | null;
+  reviewedAt?: string | null;
+  createdAt: string;
+  sessionId: number;
+  sessionDate: string;
+  classId: number;
+};
+
 export type AttendanceSession = {
   id: number;
   classId: number;

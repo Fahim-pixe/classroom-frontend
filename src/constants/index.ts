@@ -70,6 +70,8 @@ export const API_ENDPOINTS = {
     SESSIONS: "/attendance/sessions",
     CLASSES: "/attendance/classes",
     SUMMARY: "/attendance/summary",
+    CORRECTIONS: "/attendance/corrections",
+    CORRECTION_BY_ID: (correctionId: number) => `/attendance/corrections/${correctionId}`,
     CLASS_USERS: (classId: string | number) => `/classes/${classId}/users`,
   },
   RESOURCE_UPLOAD_SIGNATURE: "/resources/upload-signature",
@@ -84,6 +86,45 @@ export const API_ENDPOINTS = {
     REDIRECT_ASSET: (assetId: string) => `/storage/assets/${assetId}/redirect`,
   },
 };
+
+export const ATTENDANCE_WORKFLOW_CONFIG = {
+  correction: {
+    maximumReasonLength: 1_000,
+    maximumReviewNoteLength: 1_000,
+    reviewDecisions: {
+      approved: "approved",
+      rejected: "rejected",
+    },
+    copy: {
+      requestTitle: "Request a correction",
+      requestDescription: "Explain why this attendance record should be changed.",
+      reasonLabel: "Reason for correction",
+      requestedStatusLabel: "Requested status",
+      submitRequest: "Submit correction request",
+      requestPending: "Submitting correction request…",
+      requestSuccess: "Correction request submitted",
+      requestSuccessDescription: "Your instructor can now review this attendance record.",
+      requestError: "Unable to request a correction",
+      requestErrorDescription: "Please review the request and try again.",
+      alreadyPending: "A correction request is awaiting review.",
+      staffTitle: "Attendance correction requests",
+      staffDescription: "Approve requests only after confirming the attendance record.",
+      loading: "Loading correction requests…",
+      loadError: "Attendance correction requests could not be loaded. Please refresh and try again.",
+      pendingReview: "Pending review",
+      reviewedStatePrefix: "Correction",
+      reviewNoteLabel: "Review note",
+      approve: "Approve correction",
+      reject: "Reject correction",
+      reviewPending: "Saving correction review…",
+      reviewSuccess: "Correction review saved",
+      reviewSuccessDescription: "Attendance information has been refreshed.",
+      reviewError: "Unable to save correction review",
+      reviewErrorDescription: "Please try again.",
+      noPending: "No correction requests are awaiting review for this class.",
+    },
+  },
+} as const;
 
 export const RESOURCE_LIST_CONFIG = {
   queryParams: {
