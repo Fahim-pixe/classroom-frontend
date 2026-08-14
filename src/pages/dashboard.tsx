@@ -471,7 +471,7 @@ const StudentDashboard = ({ currentUser }: AdminDashboardProps) => {
               {announcements.map((item: AnnouncementItem) => (
                   <div key={item.id} className="space-y-2 rounded-xl border border-border bg-card p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="min-w-0 break-words font-semibold text-foreground">{item.title}</p>
+                    <p className="min-w-0 wrap-break-word font-semibold text-foreground">{item.title}</p>
                     <span className="shrink-0 text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleDateString()}</span>
                   </div>
                   <p className="text-sm text-muted-foreground">{item.className}</p>
