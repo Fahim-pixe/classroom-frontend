@@ -357,6 +357,9 @@ export const UI_TOKENS = {
     fast: "var(--motion-duration-fast)",
     standard: "var(--motion-duration-standard)",
   },
+  viewport: {
+    mobileBreakpointPx: 768,
+  },
   icon: {
     inline: "var(--icon-size-inline)",
     button: "var(--icon-size-button)",

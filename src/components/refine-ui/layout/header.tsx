@@ -48,8 +48,6 @@ function DesktopHeader() {
 }
 
 function MobileHeader() {
-  const { open, isMobile } = useSidebar();
-
   const { title } = useRefineOptions();
 
   return (
@@ -70,19 +68,12 @@ function MobileHeader() {
         "z-40"
       )}
     >
-      <SidebarTrigger
-        className={cn("text-muted-foreground", "rotate-180", "ml-1", {
-          "opacity-0": open,
-          "opacity-100": !open || isMobile,
-          "pointer-events-auto": !open || isMobile,
-          "pointer-events-none": open && !isMobile,
-        })}
-      />
+      <SidebarTrigger className={cn("ml-1", "size-11", "text-muted-foreground", "rotate-180")} />
 
       <div
         className={cn(
-          "whitespace-nowrap",
-          "flex",
+            "min-w-0",
+            "flex",
           "flex-row",
           "h-full",
           "items-center",
@@ -97,23 +88,13 @@ function MobileHeader() {
         )}
       >
         <div>{title.icon}</div>
-        <h2
-          className={cn(
-            "text-sm",
-            "font-bold",
-            "transition-opacity",
-            "duration-200",
-            {
-              "opacity-0": !open,
-              "opacity-100": open,
-            }
-          )}
-        >
+        <h2 className={cn("truncate", "text-sm", "font-bold")}>
+
           {title.text}
         </h2>
       </div>
 
-      <ThemeToggle className={cn("h-8", "w-8")} />
+      <ThemeToggle className={cn("h-11", "w-11")} />
     </header>
   );
 }

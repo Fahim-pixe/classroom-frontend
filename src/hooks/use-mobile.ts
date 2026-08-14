@@ -1,21 +1,26 @@
 import * as React from "react";
 
-const MOBILE_BREAKPOINT = 768;
+import { UI_TOKENS } from "@/constants";
+
+const MOBILE_BREAKPOINT = UI_TOKENS.viewport.mobileBreakpointPx;
+const MOBILE_MEDIA_QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`;
+
+function getIsMobileViewport() {
+  return typeof window !== "undefined" && window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+}
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
-    undefined
-  );
+  const [isMobile, setIsMobile] = React.useState(getIsMobileViewport);
 
   React.useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    };
-    mql.addEventListener("change", onChange);
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    return () => mql.removeEventListener("change", onChange);
+    const mediaQueryList = window.matchMedia(MOBILE_MEDIA_QUERY);
+    const onChange = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+
+    mediaQueryList.addEventListener("change", onChange);
+    setIsMobile(mediaQueryList.matches);
+
+    return () => mediaQueryList.removeEventListener("change", onChange);
   }, []);
 
-  return !!isMobile;
+  return isMobile;
 }

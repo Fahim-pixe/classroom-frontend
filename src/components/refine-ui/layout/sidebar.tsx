@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetIdentity, useLink, useRefineOptions } from "@refinedev/core";
 import { useLocation } from "react-router";
 
@@ -22,7 +22,7 @@ import {
 import type { User } from "@/types";
 
 export function Sidebar() {
-  const { open } = useShadcnSidebar();
+  const { open, isMobile, setOpenMobile } = useShadcnSidebar();
   const location = useLocation();
   const { data: identity } = useGetIdentity<User>();
   const role = (identity?.role ?? NAVIGATION_CONFIG.defaultRole) as NavigationRole;
@@ -31,6 +31,14 @@ export function Sidebar() {
   useEffect(() => {
     setPendingRoute(undefined);
   }, [location.pathname]);
+
+  const handleNavigation = useCallback((route: string) => {
+    setPendingRoute(route);
+
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [isMobile, setOpenMobile]);
 
   const groups = useMemo(
     () =>
@@ -69,14 +77,14 @@ export function Sidebar() {
         <NavigationLink
           item={NAVIGATION_CONFIG.dashboard}
           pendingRoute={pendingRoute}
-          onNavigate={setPendingRoute}
+          onNavigate={handleNavigation}
         />
         {groups.map((group) => (
           <NavigationGroup
             key={group.id}
             group={group}
             pendingRoute={pendingRoute}
-            onNavigate={setPendingRoute}
+            onNavigate={handleNavigation}
           />
         ))}
       </ShadcnSidebarContent>
@@ -155,8 +163,11 @@ function NavigationLink({ item, pendingRoute, onNavigate }: NavigationLinkProps)
         "items-center",
         "justify-start",
         "gap-2",
-        "py-2",
+        "min-h-11",
+        "py-2.5",
         "!px-3",
+        "md:min-h-10",
+        "md:py-2",
         "text-sm",
         {
           "bg-sidebar-primary": isSelected,
