@@ -207,15 +207,28 @@ export type AttendanceSession = {
   };
 };
 
+export type GradebookCategory = {
+  id: number;
+  classId: number;
+  title: string;
+  weight: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type GradebookEntry = {
   id: number;
   classId: number;
   teacherId: string;
   studentId: string;
+  categoryId?: number | null;
   title: string;
   points: number;
   maxPoints: number;
   feedback?: string | null;
+  isReleased?: boolean;
+  releasedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   student?: {
@@ -223,5 +236,24 @@ export type GradebookEntry = {
     name: string;
     email: string;
   };
+  category?: Pick<GradebookCategory, "id" | "title" | "weight"> | null;
   className?: string;
+};
+
+export type GradebookEntryAudit = {
+  id: number;
+  action: "created" | "updated" | "release_updated";
+  details: {
+    snapshot?: {
+      categoryId: number | null;
+      points: number;
+      maxPoints: number;
+      isReleased: boolean;
+    };
+  };
+  createdAt: string;
+  actor: {
+    id: string;
+    name: string;
+  };
 };

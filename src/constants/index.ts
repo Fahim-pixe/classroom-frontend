@@ -63,6 +63,10 @@ export const API_ENDPOINTS = {
     LIST: "/gradebook",
     CLASSES: "/gradebook/classes",
     SUMMARY: "/gradebook/summary",
+    CATEGORIES: "/gradebook/categories",
+    EXPORT: "/gradebook/export",
+    RELEASE: (entryId: string | number) => `/gradebook/${entryId}/release`,
+    AUDIT: (entryId: string | number) => `/gradebook/${entryId}/audit`,
     CLASS_USERS: (classId: string | number) => `/classes/${classId}/users`,
   },
   ATTENDANCE: {
@@ -86,6 +90,51 @@ export const API_ENDPOINTS = {
     REDIRECT_ASSET: (assetId: string) => `/storage/assets/${assetId}/redirect`,
   },
 };
+
+export const GRADEBOOK_WORKFLOW_CONFIG = {
+  category: {
+    maximumTitleLength: 120,
+    minimumWeight: 1,
+    maximumWeight: 100,
+  },
+  entry: {
+    maximumTitleLength: 200,
+    maximumFeedbackLength: 5_000,
+  },
+  copy: {
+    categoryTitle: "Grade categories",
+    categoryDescription: "Use weighted categories to make academic records easier to interpret.",
+    categoryNameLabel: "Category name",
+    categoryWeightLabel: "Weight",
+    addCategory: "Add category",
+    categoryPending: "Adding grade category…",
+    categorySuccess: "Grade category added",
+    categoryError: "Unable to add grade category",
+    categoryErrorDescription: "Please review the category and try again.",
+    categoryEmpty: "No grade categories have been created for this class.",
+    categorySelectLabel: "Category",
+    categorySelectPlaceholder: "No category",
+    releaseLabel: "Release to student",
+    released: "Released",
+    withheld: "Withheld",
+    updateRelease: "Update release state",
+    releasePending: "Updating release state…",
+    releaseSuccess: "Grade release state updated",
+    releaseError: "Unable to update grade release state",
+    releaseErrorDescription: "Please try again.",
+    auditTitle: "Grade audit history",
+    auditLoading: "Loading audit history…",
+    auditEmpty: "No audit records are available for this assessment.",
+    auditError: "Audit history could not be loaded. Please try again.",
+    export: "Export CSV",
+    exportPending: "Preparing export…",
+    exportSuccess: "Gradebook export downloaded",
+    exportError: "Unable to export gradebook",
+    exportErrorDescription: "Please try again.",
+    weightedAverage: "Weighted average",
+    scoreLabel: "Score",
+  },
+} as const;
 
 export const ATTENDANCE_WORKFLOW_CONFIG = {
   correction: {
