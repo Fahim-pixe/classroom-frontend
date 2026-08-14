@@ -210,7 +210,7 @@ const GradebookPage = () => {
                       <Badge variant="secondary">{entry.points} / {entry.maxPoints} points</Badge>
                     </div>
                     {entry.feedback ? (
-                      <p className="mt-3 break-words text-muted-foreground">Instructor feedback: {entry.feedback}</p>
+                      <p className="mt-3 wrap-break-word text-muted-foreground">Instructor feedback: {entry.feedback}</p>
                     ) : null}
                   </article>
                 ))
