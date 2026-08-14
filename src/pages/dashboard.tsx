@@ -138,8 +138,8 @@ const StatCard = ({
 const QuickAction = ({ title, description, icon: Icon, to }: { title: string; description: string; icon: typeof Users; to: string }) => {
   const Link = useLink();
   return (
-    <Link to={to} className="group interactive-card flex min-h-24 items-center gap-3 rounded-[var(--radius-card)] border border-border bg-card px-4 hover:border-primary/40 sm:min-h-28 sm:gap-5 sm:px-6">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-card)] bg-primary/10 text-primary transition-colors duration-(--motion-duration-standard) group-hover:bg-primary/20 sm:h-14 sm:w-14">
+    <Link to={to} className="group interactive-card flex min-h-24 items-center gap-3 rounded-(--radius-card) border border-border bg-card px-4 hover:border-primary/40 sm:min-h-28 sm:gap-5 sm:px-6">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-(--radius-card) bg-primary/10 text-primary transition-colors duration-(--motion-duration-standard) group-hover:bg-primary/20 sm:h-14 sm:w-14">
         <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
       </span>
       <span className="min-w-0">
@@ -224,7 +224,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
       </section>
 
       {hasError && (
-        <div className="mb-6 rounded-[var(--radius-card)] border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="mb-6 rounded-(--radius-card) border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           Some statistics could not be refreshed. The dashboard is showing available values.
         </div>
       )}
