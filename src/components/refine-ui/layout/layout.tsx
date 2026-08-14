@@ -1,7 +1,6 @@
 "use client";
 
 import { Header } from "@/components/refine-ui/layout/header";
-import { ThemeProvider } from "@/components/refine-ui/theme/theme-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { PERFORMANCE_CONFIG } from "@/constants";
 import { cn } from "@/lib/utils";
@@ -11,8 +10,7 @@ import { Sidebar } from "./sidebar";
 
 export function Layout({ children }: PropsWithChildren) {
   return (
-    <ThemeProvider>
-      <SidebarProvider>
+    <SidebarProvider>
         <Sidebar />
         <SidebarInset>
           <Header />
@@ -38,8 +36,7 @@ export function Layout({ children }: PropsWithChildren) {
             </Suspense>
           </main>
         </SidebarInset>
-      </SidebarProvider>
-    </ThemeProvider>
+    </SidebarProvider>
   );
 }
 

@@ -11,24 +11,18 @@ import {
   UserRoundPlus,
   Users,
 } from "lucide-react";
-import {
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { lazy, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Assignment, User } from "@/types";
 import { UserRole } from "@/types";
-import TeacherDashboard from "@/pages/teacher-dashboard";
 import { API_ENDPOINTS, ROUTES } from "@/constants";
+
+const TeacherDashboard = lazy(() => import("@/pages/teacher-dashboard"));
+const DeferredAdminDashboardAnalytics = lazy(() =>
+  import("@/components/dashboard/admin-dashboard-analytics").then(({ AdminDashboardAnalytics: Analytics }) => ({ default: Analytics })),
+);
 
 const emptyOverview = { users: 0, teachers: 0, admins: 0, subjects: 0, departments: 0, classes: 0 };
 const emptyCharts = { usersByRole: [] as Array<{ role?: string; total?: number | string }> };
@@ -36,6 +30,23 @@ const emptyLatest = { latestClasses: [], latestTeachers: [] };
 
 type AdminDashboardProps = { currentUser?: User };
 type RoleRow = { name: string; value: number };
+
+type DashboardRouteFallbackProps = {
+  label: string;
+};
+
+const DashboardRouteFallback = ({ label }: DashboardRouteFallbackProps) => (
+  <div className="flex min-h-96 items-center justify-center" role="status" aria-live="polite">
+    <p className="text-sm text-muted-foreground">{label}</p>
+  </div>
+);
+
+const DashboardAnalyticsFallback = () => (
+  <section className="grid gap-6 xl:grid-cols-[minmax(320px,0.8fr)_minmax(0,1.55fr)]" aria-busy="true">
+    <Card className="overflow-hidden shadow-sm"><CardContent className="h-80 animate-pulse p-8"><div className="h-full rounded-xl bg-muted" /></CardContent></Card>
+    <Card className="overflow-hidden shadow-sm"><CardContent className="h-80 animate-pulse p-8"><div className="h-full rounded-xl bg-muted" /></CardContent></Card>
+  </section>
+);
 
 type DashboardPayload = {
   role?: string;
@@ -222,70 +233,9 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
         </div>
       )}
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(320px,0.8fr)_minmax(0,1.55fr)]">
-        <Card className="overflow-hidden shadow-sm">
-          <CardHeader className="flex flex-row items-start justify-between space-y-0 px-8 pb-0 pt-8">
-            <div>
-              <CardTitle className="text-xl">Student distribution</CardTitle>
-              <p className="mt-2 text-sm text-muted-foreground">Where students are distributed academically.</p>
-            </div>
-          </CardHeader>
-          <CardContent className="px-8 pb-6 pt-4">
-            <div className="h-64">
-              {donutData.length === 0 ? (
-                <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">No distribution data is available yet.</div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={donutData} dataKey="value" nameKey="name" innerRadius={68} outerRadius={102} paddingAngle={2} strokeWidth={0}>
-                      {donutData.map((_, index) => <Cell key={`donut-cell-${index}`} fill={`var(--chart-${(index % 5) + 1})`} />)}
-                    </Pie>
-                    <Tooltip formatter={(value: number) => [value, "Students"]} contentStyle={{ backgroundColor: "var(--popover)", borderColor: "var(--border)", color: "var(--popover-foreground)" }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-            {donutData.length > 0 && <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-5">
-              {donutData.map((entry, index) => (
-                <div key={entry.name} className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: `var(--chart-${(index % 5) + 1})` }} />
-                  <span>{entry.name}</span>
-                  <Badge variant="secondary" className="ml-auto font-medium">{entry.value}</Badge>
-                </div>
-              ))}
-            </div>}
-            <Button variant="outline" className="mt-6 h-11 w-full rounded-xl" asChild>
-              <Link to={ROUTES.USERS.LIST}>View full report</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden shadow-sm">
-          <CardHeader className="flex flex-row items-start justify-between space-y-0 px-8 pb-0 pt-8">
-            <div>
-              <CardTitle className="text-xl">Student enrollment trend</CardTitle>
-              <p className="mt-2 text-sm text-muted-foreground">Track how student enrollment has changed throughout the academic year.</p>
-            </div>
-          </CardHeader>
-          <CardContent className="px-8 pb-8 pt-4">
-            <div className="mb-3 flex justify-end gap-5 text-sm text-muted-foreground">
-              <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-primary" /> Total students</span>
-              <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-primary/40" /> New enrollments</span>
-            </div>
-            <div className="h-80 min-h-65 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyData} margin={{ top: 12, right: 8, left: -20, bottom: 4 }}>
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} allowDecimals={false} />
-                  <Tooltip contentStyle={{ backgroundColor: "var(--popover)", borderColor: "var(--border)", color: "var(--popover-foreground)" }} />
-                  <Line type="monotone" dataKey="current" stroke="var(--primary)" strokeWidth={3} dot={false} activeDot={{ r: 5 }} />
-                  <Line type="monotone" dataKey="average" stroke="var(--chart-2)" strokeWidth={3} dot={false} activeDot={{ r: 5 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
+      <Suspense fallback={<DashboardAnalyticsFallback />}>
+        <DeferredAdminDashboardAnalytics donutData={donutData} monthlyData={monthlyData} />
+      </Suspense>
 
       <Card className="mt-6 shadow-sm">
         <CardHeader><CardTitle>Recent activity</CardTitle></CardHeader>
@@ -466,7 +416,11 @@ const Dashboard = () => {
     return <p className="text-sm text-muted-foreground">Loading dashboard...</p>;
   }
   if (currentUser?.role === UserRole.TEACHER) {
-    return <TeacherDashboard teacher={currentUser} />;
+    return (
+      <Suspense fallback={<DashboardRouteFallback label="Loading your teaching workspace…" />}>
+        <TeacherDashboard teacher={currentUser} />
+      </Suspense>
+    );
   }
   if (currentUser?.role === UserRole.STUDENT) {
     return <StudentDashboard currentUser={currentUser} />;

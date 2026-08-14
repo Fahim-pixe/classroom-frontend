@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useGetIdentity, useLink, useRefineOptions } from "@refinedev/core";
 import { useLocation } from "react-router";
 
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { preloadRoute } from "@/lib/route-preload";
 import {
   NAVIGATION_CONFIG,
   type NavigationGroupConfig,
@@ -22,8 +23,14 @@ import type { User } from "@/types";
 
 export function Sidebar() {
   const { open } = useShadcnSidebar();
+  const location = useLocation();
   const { data: identity } = useGetIdentity<User>();
   const role = (identity?.role ?? NAVIGATION_CONFIG.defaultRole) as NavigationRole;
+  const [pendingRoute, setPendingRoute] = useState<string>();
+
+  useEffect(() => {
+    setPendingRoute(undefined);
+  }, [location.pathname]);
 
   const groups = useMemo(
     () =>
@@ -59,9 +66,18 @@ export function Sidebar() {
           },
         )}
       >
-        <NavigationLink item={NAVIGATION_CONFIG.dashboard} />
+        <NavigationLink
+          item={NAVIGATION_CONFIG.dashboard}
+          pendingRoute={pendingRoute}
+          onNavigate={setPendingRoute}
+        />
         {groups.map((group) => (
-          <NavigationGroup key={group.id} group={group} />
+          <NavigationGroup
+            key={group.id}
+            group={group}
+            pendingRoute={pendingRoute}
+            onNavigate={setPendingRoute}
+          />
         ))}
       </ShadcnSidebarContent>
     </ShadcnSidebar>
@@ -70,9 +86,11 @@ export function Sidebar() {
 
 type NavigationGroupProps = {
   group: NavigationGroupConfig;
+  pendingRoute?: string;
+  onNavigate: (route: string) => void;
 };
 
-function NavigationGroup({ group }: NavigationGroupProps) {
+function NavigationGroup({ group, pendingRoute, onNavigate }: NavigationGroupProps) {
   const { open } = useShadcnSidebar();
 
   return (
@@ -101,7 +119,12 @@ function NavigationGroup({ group }: NavigationGroupProps) {
       </span>
       <div className={cn("flex", "flex-col")}>
         {group.items.map((item) => (
-          <NavigationLink key={item.id} item={item} />
+          <NavigationLink
+            key={item.id}
+            item={item}
+            pendingRoute={pendingRoute}
+            onNavigate={onNavigate}
+          />
         ))}
       </div>
     </div>
@@ -110,14 +133,16 @@ function NavigationGroup({ group }: NavigationGroupProps) {
 
 type NavigationLinkProps = {
   item: NavigationItemConfig;
+  pendingRoute?: string;
+  onNavigate: (route: string) => void;
 };
 
-function NavigationLink({ item }: NavigationLinkProps) {
+function NavigationLink({ item, pendingRoute, onNavigate }: NavigationLinkProps) {
   const Link = useLink();
   const location = useLocation();
   const { open } = useShadcnSidebar();
   const Icon = item.icon;
-  const isSelected = isActiveRoute(location.pathname, item);
+  const isSelected = pendingRoute === item.route || isActiveRoute(location.pathname, item);
 
   return (
     <Button
@@ -143,6 +168,10 @@ function NavigationLink({ item }: NavigationLinkProps) {
     >
       <Link
         to={item.route}
+        onPointerEnter={() => preloadRoute(item.route)}
+        onPointerDown={() => preloadRoute(item.route)}
+        onFocus={() => preloadRoute(item.route)}
+        onClick={() => onNavigate(item.route)}
         aria-current={isSelected ? "page" : undefined}
         aria-label={!open ? item.label : undefined}
         className={cn("flex", "w-full", "items-center", "gap-2")}
