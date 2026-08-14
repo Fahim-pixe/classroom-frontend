@@ -6,7 +6,8 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetIdentity } from "@refinedev/core";
-import { API_ENDPOINTS, BACKEND_BASE_URL, PERFORMANCE_CONFIG, STORAGE_CLIENT_CONFIG } from "@/constants";
+import { API_ENDPOINTS, BACKEND_BASE_URL, PERFORMANCE_CONFIG, STORAGE_CLIENT_CONFIG, UI_TOKENS } from "@/constants";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { ResourcesListSkeleton } from "@/components/resources/resources-list-skeleton";
 
 type Resource = {
@@ -35,17 +36,6 @@ const categoryLabels: Record<string, string> = {
   other: "Other",
 };
 
-function useDebouncedValue<T>(value: T, delayMs: number) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => setDebouncedValue(value), delayMs);
-    return () => window.clearTimeout(timeout);
-  }, [delayMs, value]);
-
-  return debouncedValue;
-}
-
 function resourceIcon(resource: Resource) {
   if (resource.category === "videos" || resource.mimeType?.startsWith("video/")) return <Film className="h-5 w-5" />;
   if (resource.category === "practice") return <FileSpreadsheet className="h-5 w-5" />;
@@ -66,7 +56,10 @@ export default function Resources() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState("");
   const [createCategory, setCreateCategory] = useState("lecture_notes");
-  const debouncedSearch = useDebouncedValue(search, PERFORMANCE_CONFIG.resourceSearchDebounceMs);
+  const debouncedSearch = useDebouncedValue(
+    search,
+    UI_TOKENS.input.serverSearchDebounceMilliseconds,
+  );
 
   useEffect(() => {
     setCurrentPage(1);

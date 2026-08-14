@@ -4,7 +4,7 @@ import {
 } from "@refinedev/rest";
 
 import { CreateResponse, GetOneResponse, ListResponse } from "@/types";
-import { API_RESPONSE_POLICY, BACKEND_BASE_URL } from "@/constants";
+import { API_RESPONSE_POLICY, BACKEND_BASE_URL, RESOURCE_LIST_CONFIG } from "@/constants";
 
 type ApiErrorBody = {
   error?: unknown;
@@ -133,6 +133,9 @@ const options: CreateDataProviderOptions = {
           if (field === "search") params.search = value;
           if (field === "category") params.category = value;
           if (field === "classId") params.classId = value;
+          if (field === RESOURCE_LIST_CONFIG.queryParams.favoritesOnly) {
+            params[RESOURCE_LIST_CONFIG.queryParams.favoritesOnly] = value;
+          }
         }
 
         if (resource === "classes") {

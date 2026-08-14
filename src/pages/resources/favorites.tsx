@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useList, useCustomMutation } from "@refinedev/core";
 import { FileText, Film, FileSpreadsheet, ExternalLink, Heart, BookOpen, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { ListView } from "@/components/refine-ui/views/list-view";
 import { ResourcesListSkeleton } from "@/components/resources/resources-list-skeleton";
+import { PERFORMANCE_CONFIG, RESOURCE_LIST_CONFIG } from "@/constants";
 
 type Resource = {
   id: number;
@@ -38,17 +40,30 @@ const resourceIcon = (resource: Resource) => {
 };
 
 const SavedResourcesPage = () => {
+  const [currentPage, setCurrentPage] = useState(1);
   const { result: resourceResult, query: resourceQuery } = useList<Resource>({
     resource: "resources",
-    pagination: { mode: "off" },
+    pagination: {
+      mode: "server",
+      currentPage,
+      pageSize: PERFORMANCE_CONFIG.resourcePageSize,
+    },
+    filters: [{
+      field: RESOURCE_LIST_CONFIG.queryParams.favoritesOnly,
+      operator: "eq",
+      value: "true",
+    }],
   });
 
   const { mutate: updateFavorite } = useCustomMutation();
 
-  const allResources: Resource[] = resourceResult.data ?? [];
-  // Filter strictly for bookmarked resources
-  const savedResources = allResources.filter((r) => r.isFavorite);
-
+  const savedResources: Resource[] = resourceResult.data ?? [];
+  const savedResourceTotal = resourceResult.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(savedResourceTotal / PERFORMANCE_CONFIG.resourcePageSize));
+  const rangeStart = savedResources.length === 0
+    ? 0
+    : ((currentPage - 1) * PERFORMANCE_CONFIG.resourcePageSize) + 1;
+  const rangeEnd = Math.min(currentPage * PERFORMANCE_CONFIG.resourcePageSize, savedResourceTotal);
   const isLoading = resourceQuery.isLoading;
   const refetch = resourceQuery.refetch;
 
@@ -73,6 +88,29 @@ const SavedResourcesPage = () => {
       </div>
 
       <div className="mt-6">
+        {!isLoading && savedResourceTotal > 0 && (
+          <div className="mb-4 flex flex-col justify-between gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center">
+            <span>Showing {rangeStart}–{rangeEnd} of {savedResourceTotal} saved materials</span>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage >= totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
         {isLoading ? (
           <ResourcesListSkeleton />
         ) : savedResources.length === 0 ? (

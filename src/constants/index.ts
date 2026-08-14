@@ -82,6 +82,12 @@ export const API_ENDPOINTS = {
   },
 };
 
+export const RESOURCE_LIST_CONFIG = {
+  queryParams: {
+    favoritesOnly: "favoritesOnly",
+  },
+} as const;
+
 export const STORAGE_CLIENT_CONFIG = {
   assetKinds: {
     avatar: "avatar",
@@ -374,6 +380,9 @@ export const UI_TOKENS = {
   },
   viewport: {
     mobileBreakpointPx: 768,
+  },
+  input: {
+    serverSearchDebounceMilliseconds: 300,
   },
   icon: {
     inline: "var(--icon-size-inline)",

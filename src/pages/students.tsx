@@ -11,12 +11,18 @@ import { Breadcrumb } from "@/components/refine-ui/layout/breadcrumb";
 import { DataTable } from "@/components/refine-ui/data-table/data-table";
 import { ShowButton } from "@/components/refine-ui/buttons/show";
 import type { User } from "@/types";
+import { UI_TOKENS } from "@/constants";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 const getInitials = (name = "") => name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
 
 const StudentsPage = () => {
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") ?? "");
+  const debouncedSearchQuery = useDebouncedValue(
+    searchQuery,
+    UI_TOKENS.input.serverSearchDebounceMilliseconds,
+  );
   const columns = useMemo<ColumnDef<User>[]>(() => [
     {
       id: "name",
@@ -34,7 +40,9 @@ const StudentsPage = () => {
     { id: "details", size: 120, header: () => <p className="column-title">Details</p>, cell: ({ row }) => <ShowButton resource="users" recordItemId={row.original.id} variant="outline" size="sm">View</ShowButton> },
   ], []);
 
-  const filters = searchQuery ? [{ field: "search", operator: "contains" as const, value: searchQuery }] : [];
+  const filters = debouncedSearchQuery
+    ? [{ field: "search", operator: "contains" as const, value: debouncedSearchQuery }]
+    : [];
   const studentsTable = useTable<User>({
     columns,
     refineCoreProps: {
