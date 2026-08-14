@@ -386,6 +386,20 @@ export const PERFORMANCE_CONFIG = {
   },
 } as const;
 
+export const ASSIGNMENT_WORKFLOW_CONFIG = {
+  rubric: {
+    maximumCriteria: 12,
+    initialCriterionPoints: 10,
+  },
+  labels: {
+    rubricTitle: "Rubric",
+    addCriterion: "Add criterion",
+    removeCriterion: "Remove criterion",
+    allowResubmissions: "Allow resubmissions",
+    resubmissionDeadline: "Resubmission deadline",
+  },
+} as const;
+
 export const UI_TOKENS = {
   motion: {
     fast: "var(--motion-duration-fast)",

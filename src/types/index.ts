@@ -100,6 +100,19 @@ export type SignUpPayload = {
   role: UserRole;
 };
 
+export type AssignmentRubricCriterion = {
+  id: string;
+  title: string;
+  description?: string;
+  maxPoints: number;
+};
+
+export type SubmissionRubricScore = {
+  criterionId: string;
+  points: number;
+  feedback?: string;
+};
+
 export type Assignment = {
   id: number;
   classId: number;
@@ -108,7 +121,11 @@ export type Assignment = {
   description: string;
   dueAt?: string | null;
   maxPoints: number;
+  rubric?: AssignmentRubricCriterion[];
+  allowResubmissions?: boolean;
+  resubmissionDeadline?: string | null;
   attachmentUrl?: string | null;
+  attachmentAssetId?: string | null;
   attachmentName?: string | null;
   attachmentMimeType?: string | null;
   attachmentSizeBytes?: number | null;
@@ -125,6 +142,7 @@ export type Assignment = {
     submittedAt?: string | null;
     grade?: number | null;
     feedback?: string | null;
+    rubricScores?: SubmissionRubricScore[];
   } | null;
 };
 
@@ -134,12 +152,14 @@ export type Submission = {
   studentId: string;
   content: string;
   attachmentUrl?: string | null;
+  attachmentAssetId?: string | null;
   attachmentName?: string | null;
   attachmentMimeType?: string | null;
   attachmentSizeBytes?: number | null;
   submittedAt: string;
   grade?: number | null;
   feedback?: string | null;
+  rubricScores?: SubmissionRubricScore[];
   student: User;
 };
 
