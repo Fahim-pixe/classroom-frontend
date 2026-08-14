@@ -17,15 +17,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import { DeferredAdminDashboardAnalytics } from "@/components/dashboard/deferred-admin-dashboard-analytics";
 import type { Assignment, User } from "@/types";
 import { UserRole } from "@/types";
 import { API_ENDPOINTS, ROUTES } from "@/constants";
 import { getRoutePrefetchedData } from "@/lib/route-data-preload";
 
 const TeacherDashboard = lazy(() => import("@/pages/teacher-dashboard"));
-const DeferredAdminDashboardAnalytics = lazy(() =>
-  import("@/components/dashboard/admin-dashboard-analytics").then(({ AdminDashboardAnalytics: Analytics }) => ({ default: Analytics })),
-);
 
 const emptyOverview = { users: 0, teachers: 0, admins: 0, subjects: 0, departments: 0, classes: 0 };
 const emptyCharts = { usersByRole: [] as Array<{ role?: string; total?: number | string }> };
@@ -33,13 +31,6 @@ const emptyLatest = { latestClasses: [], latestTeachers: [] };
 
 type AdminDashboardProps = { currentUser?: User };
 type RoleRow = { name: string; value: number };
-
-const DashboardAnalyticsFallback = () => (
-  <section className="grid gap-6 xl:grid-cols-[minmax(320px,0.8fr)_minmax(0,1.55fr)]" aria-busy="true">
-    <Card className="overflow-hidden shadow-sm"><CardContent className="h-80 animate-pulse p-8"><div className="h-full rounded-xl bg-muted" /></CardContent></Card>
-    <Card className="overflow-hidden shadow-sm"><CardContent className="h-80 animate-pulse p-8"><div className="h-full rounded-xl bg-muted" /></CardContent></Card>
-  </section>
-);
 
 type DashboardPayload = {
   role?: string;
@@ -224,9 +215,7 @@ const AdminDashboard = ({ currentUser }: AdminDashboardProps) => {
         </div>
       )}
 
-      <Suspense fallback={<DashboardAnalyticsFallback />}>
-        <DeferredAdminDashboardAnalytics donutData={donutData} monthlyData={monthlyData} />
-      </Suspense>
+      <DeferredAdminDashboardAnalytics donutData={donutData} monthlyData={monthlyData} />
 
       <Card className="mt-6 shadow-sm">
         <CardHeader><CardTitle>Recent activity</CardTitle></CardHeader>

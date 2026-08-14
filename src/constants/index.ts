@@ -391,6 +391,13 @@ export const UI_TOKENS = {
   },
 } as const;
 
+export const DASHBOARD_ANALYTICS_DELIVERY_POLICY = {
+  visibilityGatingEnabled: true,
+  compactMobileSummaryEnabled: true,
+  observerRootMargin: "240px 0px",
+  observerThreshold: 0,
+} as const;
+
 export const DEPARTMENTS = [
   "Computer Science",
   "Mathematics",

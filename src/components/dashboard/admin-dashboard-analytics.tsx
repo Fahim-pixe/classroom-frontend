@@ -27,7 +27,7 @@ type EnrollmentTrendRow = {
   average: number;
 };
 
-type AdminDashboardAnalyticsProps = {
+export type AdminDashboardAnalyticsProps = {
   donutData: RoleRow[];
   monthlyData: EnrollmentTrendRow[];
 };
